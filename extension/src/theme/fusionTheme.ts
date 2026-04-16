@@ -1,0 +1,70 @@
+/**
+ * EziTerms Extension Design System
+ * Matches the website: pure black base, monochrome palette, blue accent, translucent glass.
+ */
+
+export const fusion = {
+  /* ---- Colors: website-aligned palette ---- */
+  bg: '#000000',
+  bgElevated: '#0a0a0a',
+  bgCard: 'rgba(255, 255, 255, 0.03)',
+  bgCardHover: 'rgba(255, 255, 255, 0.05)',
+  bgInput: 'rgba(255, 255, 255, 0.04)',
+  bgInputFocus: 'rgba(255, 255, 255, 0.08)',
+  border: 'rgba(255, 255, 255, 0.06)',
+  borderStrong: 'rgba(255, 255, 255, 0.12)',
+  text: '#ededed',
+  textMuted: '#888888',
+  textSubtle: '#555555',
+  accent: '#3291ff',
+  accent2: '#3291ff',
+  accentAmber: 'rgba(251, 146, 60, 0.95)',
+  gradient: 'linear-gradient(135deg, #fff 0%, rgba(255, 255, 255, 0.7) 100%)',
+  gradientHover: 'linear-gradient(135deg, #ededed 0%, rgba(255, 255, 255, 0.6) 100%)',
+  gradientSoft: 'linear-gradient(180deg, rgba(50, 145, 255, 0.04) 0%, transparent 100%)',
+  glassBorder: 'rgba(255, 255, 255, 0.08)',
+  glassBg: 'rgba(255, 255, 255, 0.02)',
+  glassBgStrong: 'rgba(255, 255, 255, 0.04)',
+  /* ---- Border radius ---- */
+  radius: 10,
+  radiusSm: 8,
+  radiusLg: 14,
+  radiusXl: 18,
+  /* ---- Typography ---- */
+  font: '"Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif',
+  fontSizeXs: 11,
+  fontSizeSm: 13,
+  fontSizeBase: 14,
+  fontSizeMd: 15,
+  fontSizeLg: 16,
+  fontSizeXl: 18,
+  fontSize2xl: 20,
+  fontWeightMedium: 500,
+  fontWeightSemibold: 600,
+  fontWeightBold: 700,
+  lineHeightTight: 1.35,
+  lineHeightNormal: 1.5,
+  lineHeightRelaxed: 1.6,
+  /* ---- Spacing ---- */
+  space1: 4,
+  space2: 8,
+  space3: 12,
+  space4: 16,
+  space5: 20,
+  space6: 24,
+  space8: 32,
+  space10: 40,
+  /* ---- Shadows & transitions ---- */
+  shadow: '0 4px 20px rgba(0, 0, 0, 0.3)',
+  shadowSm: '0 2px 8px rgba(0, 0, 0, 0.25)',
+  shadowButton: '0 2px 12px rgba(0, 0, 0, 0.2)',
+  shadowCard: '0 4px 12px rgba(0, 0, 0, 0.2)',
+  shadowGlass: '0 8px 24px rgba(0, 0, 0, 0.4)',
+  transition: 'all 0.15s ease',
+  transitionFast: 'all 0.1s ease',
+  /* ---- Semantic ---- */
+  successBg: 'rgba(34, 197, 94, 0.12)',
+  successText: '#4ade80',
+  dangerBg: 'rgba(239, 68, 68, 0.12)',
+  dangerText: '#f87171',
+} as const;

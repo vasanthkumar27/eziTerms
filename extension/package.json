@@ -1,0 +1,35 @@
+{
+  "name": "my-extension",
+  "version": "1.0.0",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build && vite build --config vite.config.content.ts",
+    "build:local": "cross-env VITE_USE_AWS=false vite build && vite build --config vite.config.content.ts",
+    "build:prod": "cross-env VITE_USE_AWS=true vite build && vite build --config vite.config.content.ts"
+  },
+  "dependencies": {
+    "@babel/core": "^7.27.3",
+    "@babel/generator": "^7.27.3",
+    "@babel/template": "^7.27.2",
+    "@babel/traverse": "^7.27.3",
+    "@react-oauth/google": "^0.12.2",
+    "react": "^18.2.0",
+    "react-dom": "^18.2.0"
+  },
+  "devDependencies": {
+    "cross-env": "^7.0.3",
+    "@babel/parser": "^7.27.2",
+    "@babel/types": "^7.27.3",
+    "@types/chrome": "^0.1.6",
+    "@types/node": "^22.15.21",
+    "@types/react": "^19.1.5",
+    "@types/react-dom": "^19.1.5",
+    "@vitejs/plugin-react": "^4.0.0",
+    "csstype": "^3.1.3",
+    "typescript": "^5.0.0",
+    "undici": "^7.10.0",
+    "undici-types": "^7.10.0",
+    "vite": "^4.0.0",
+    "vite-plugin-static-copy": "^0.15.0"
+  }
+}
