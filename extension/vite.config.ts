@@ -11,7 +11,10 @@ export default defineConfig(({ mode }) => {
   //   2. VITE_USE_AWS=true   — production  (https://api.haptix.in/api)
   //   3. VITE_USE_AWS=false  — local dev   (http://localhost:8000/api)
   const override = (process.env.VITE_API_BASE_URL || '').trim();
-  const useAws = ['true', '1', 'yes'].includes(String(process.env.VITE_USE_AWS ?? 'true').toLowerCase());
+  const useAwsRaw = process.env.VITE_USE_AWS;
+  const useAws = useAwsRaw === undefined
+    ? false  // default to local to match MasterConstants.tsx; explicit override still wins
+    : ['true', '1', 'yes'].includes(String(useAwsRaw).toLowerCase());
   const apiBaseUrl = override
     ? override.replace(/\/+$/, '')
     : (useAws ? 'https://api.haptix.in/api' : 'http://localhost:8000/api');
