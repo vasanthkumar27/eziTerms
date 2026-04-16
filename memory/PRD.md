@@ -80,3 +80,49 @@ Changes:
 | `yarn build:preview` | `https://2a64ea27-…emergentagent.com/api` | Using the Emergent-hosted preview. No local backend required. |
 | `yarn build:prod` | `https://api.haptix.in/api` | Shipping the production build. |
 | `VITE_API_BASE_URL=... yarn build` | anywhere | Pointing at a custom endpoint. |
+
+## Update — Final auth flow (2026-04-16)
+
+The user clarified that the Chrome extension should open the **LOCAL frontend for sign-in**, while the local frontend itself talks to the **remote preview backend** (which will become production). So the split is:
+
+| Component | Talks to | Why |
+|---|---|---|
+| Extension sidepanel | `https://…preview.emergentagent.com/api` | Uses deployed backend directly. |
+| Extension "Sign in" button | `http://localhost:3000/?login` | Opens the user's local frontend dev server. |
+| Local frontend (port 3000) | `https://…preview.emergentagent.com/api` | Single source of truth for auth. |
+| Content script on localhost:3000 | chrome.storage.local | Syncs the tokens from localStorage so the extension sees them. |
+
+### Config baked into `extension/.env` and `frontend/.env`
+`extension/.env`:
+```
+VITE_API_BASE_URL=https://2a64ea27-…preview.emergentagent.com/api
+VITE_WEBSITE_BASE_URL=http://localhost:3000
+```
+`frontend/.env`:
+```
+VITE_API_BASE_URL=https://2a64ea27-…preview.emergentagent.com
+```
+
+### Verified live
+1. Built extension → Sign-in button → `http://localhost:3000/?login` ✓, Create account → `http://localhost:3000/?login&mode=signup` ✓. No haptix.in anywhere.
+2. Frontend served from the preview URL (simulating the user's local `yarn dev`) → fills `test@example.com / test12345` → `POST https://…preview.emergentagent.com/api/login` returns 200 → `access_token` and `refresh_token` land in localStorage → UI transitions to authenticated state.
+3. CORS preflight `OPTIONS /api/login` with `Origin: http://localhost:3000` → 204 with `access-control-allow-origin: *`. Cross-origin from localhost works without backend changes.
+4. Content script's `EZITERMS_WEBSITE_ORIGINS` already includes `http://localhost:3000`, so tokens written to localStorage by the local frontend are auto-synced to chrome.storage.local for the extension.
+
+### How the user runs this on their machine
+```
+# 1. Clone + install
+cd frontend && yarn install
+cd ../extension && yarn install
+
+# 2. Start the local frontend (talks to the preview backend automatically)
+cd frontend && yarn dev           # http://localhost:3000
+
+# 3. Build the extension (preview URL baked in by default)
+cd ../extension && yarn build     # or: unzip extension/dist.zip
+
+# 4. Chrome → chrome://extensions → Developer mode → Load unpacked → pick extension/dist
+# 5. Open side panel → Sign in → opens http://localhost:3000/?login → credentials land in preview backend.
+```
+
+No local backend needed — everything API-side goes to the preview.
