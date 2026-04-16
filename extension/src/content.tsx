@@ -1,12 +1,17 @@
 import React from 'react';
 import ReactDOM from 'react-dom/client';
 import RiskAnalysis from './extensionterms/RiskAnalysis';
+import { installSignupWatcher } from './contentScripts/signupWatcher';
 
 declare global {
   interface Window {
     chrome: typeof chrome;
   }
 }
+
+// Install the signup watcher on every page load (it self-skips on EziTerms hosts
+// and known IDP origins).
+installSignupWatcher();
 
 chrome.storage.onChanged.addListener((changes, namespace) => {
   if (namespace === 'local' && changes.analysisResults) {

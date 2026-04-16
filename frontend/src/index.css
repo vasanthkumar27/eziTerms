@@ -17,6 +17,20 @@
   --radius:12px;
   --radius-lg:20px;
   --transition:150ms ease;
+
+  /* Glass tokens */
+  --glass-bg:rgba(14,14,16,0.55);
+  --glass-bg-strong:rgba(14,14,16,0.72);
+  --glass-bg-subtle:rgba(255,255,255,0.035);
+  --glass-border:rgba(255,255,255,0.08);
+  --glass-border-strong:rgba(255,255,255,0.14);
+  --glass-blur:18px;
+  --glass-blur-strong:26px;
+  --glass-shadow:0 10px 30px rgba(0,0,0,0.35), inset 0 1px 0 rgba(255,255,255,0.04);
+  --glass-shadow-float:0 24px 60px rgba(0,0,0,0.55), inset 0 1px 0 rgba(255,255,255,0.06);
+
+  /* Safe-area-aware top padding for nav so it never crops under a notch */
+  --nav-top-pad:max(10px, env(safe-area-inset-top, 0px));
 }
 
 html,body,#root{height:100%;width:100%}
@@ -68,3 +82,109 @@ a:hover{text-decoration:underline}
 @keyframes fadeUp{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
 @keyframes fadeIn{from{opacity:0}to{opacity:1}}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.5}}
+
+/* ────────────────────── Glassmorphism primitives ────────────────────── */
+
+.glass{
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:saturate(180%) blur(var(--glass-blur));
+  backdrop-filter:saturate(180%) blur(var(--glass-blur));
+  border:1px solid var(--glass-border);
+  box-shadow:var(--glass-shadow);
+}
+
+.glass-strong{
+  background:var(--glass-bg-strong);
+  -webkit-backdrop-filter:saturate(200%) blur(var(--glass-blur-strong));
+  backdrop-filter:saturate(200%) blur(var(--glass-blur-strong));
+  border:1px solid var(--glass-border-strong);
+  box-shadow:var(--glass-shadow-float);
+}
+
+.glass-subtle{
+  background:var(--glass-bg-subtle);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border:1px solid var(--glass-border);
+}
+
+/* Sticky nav: safe-area-aware top padding + frosted glass */
+.app-nav{
+  position:sticky;
+  top:0;
+  z-index:40;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:var(--nav-top-pad) 24px 10px 24px;
+  min-height:calc(56px + var(--nav-top-pad));
+  background:var(--glass-bg);
+  -webkit-backdrop-filter:saturate(180%) blur(var(--glass-blur));
+  backdrop-filter:saturate(180%) blur(var(--glass-blur));
+  border-bottom:1px solid var(--glass-border);
+  box-shadow:0 4px 20px rgba(0,0,0,0.25);
+  flex-shrink:0;
+}
+
+/* Bubble variants */
+.glass-user{
+  background:linear-gradient(135deg,rgba(255,255,255,0.10),rgba(255,255,255,0.04));
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.12);
+}
+.glass-bot{
+  background:var(--glass-bg-subtle);
+  -webkit-backdrop-filter:blur(12px);
+  backdrop-filter:blur(12px);
+  border:1px solid var(--glass-border);
+}
+
+/* Translucent frosted button */
+.glass-btn{
+  background:rgba(255,255,255,0.06);
+  -webkit-backdrop-filter:blur(10px);
+  backdrop-filter:blur(10px);
+  border:1px solid rgba(255,255,255,0.14);
+  color:var(--text);
+  transition:background var(--transition), border-color var(--transition), transform var(--transition);
+}
+.glass-btn:hover{
+  background:rgba(255,255,255,0.12);
+  border-color:rgba(255,255,255,0.24);
+}
+.glass-btn:active{ transform:scale(0.98) }
+
+/* Modal shell */
+.glass-modal-backdrop{
+  position:fixed;inset:0;z-index:60;
+  background:rgba(0,0,0,0.45);
+  -webkit-backdrop-filter:blur(6px);
+  backdrop-filter:blur(6px);
+}
+.glass-modal{
+  background:var(--glass-bg-strong);
+  -webkit-backdrop-filter:saturate(200%) blur(var(--glass-blur-strong));
+  backdrop-filter:saturate(200%) blur(var(--glass-blur-strong));
+  border:1px solid var(--glass-border-strong);
+  box-shadow:var(--glass-shadow-float);
+  border-radius:18px;
+}
+
+/* Risk card glass */
+.glass-risk-card{
+  background:var(--glass-bg-subtle);
+  -webkit-backdrop-filter:blur(8px);
+  backdrop-filter:blur(8px);
+  border:1px solid var(--glass-border);
+  border-radius:12px;
+  transition:border-color var(--transition), background var(--transition);
+}
+.glass-risk-card:hover{
+  background:rgba(255,255,255,0.06);
+  border-color:var(--glass-border-strong);
+}
+
+/* Utility: subtle hover lift */
+.lift{transition:transform var(--transition), box-shadow var(--transition)}
+.lift:hover{transform:translateY(-1px);box-shadow:var(--glass-shadow-float)}

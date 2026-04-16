@@ -2,7 +2,7 @@ export default function Landing({ authed, onStart, onLogin, onLogout }) {
   return (
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Nav */}
-      <nav style={nav}>
+      <nav className="app-nav" style={{ padding: 'var(--nav-top-pad) 32px 10px 32px' }}>
         <span style={logo}>EziTerms</span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {authed ? (
@@ -96,7 +96,7 @@ const heroSub = { fontSize: 'clamp(0.92rem,1.5vw,1.1rem)', color: 'var(--text-se
 const ctaPrimary = { display: 'inline-flex', alignItems: 'center', padding: '12px 28px', fontSize: '0.92rem', fontWeight: 600, borderRadius: 10, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', transition: 'transform 150ms, box-shadow 150ms', boxShadow: '0 0 0 0 rgba(255,255,255,0)' };
 const ctaSecondary = { display: 'inline-flex', alignItems: 'center', padding: '12px 24px', fontSize: '0.88rem', fontWeight: 500, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', textDecoration: 'none', transition: 'border-color 150ms' };
 
-const featureCard = { padding: '20px 18px', borderRadius: 'var(--radius)', border: '1px solid var(--border)', background: 'var(--bg-card)', transition: 'border-color 200ms, background 200ms', cursor: 'default' };
+const featureCard = { padding: '20px 18px', borderRadius: 14, background: 'var(--glass-bg-subtle)', backdropFilter: 'blur(10px)', WebkitBackdropFilter: 'blur(10px)', border: '1px solid var(--glass-border)', transition: 'border-color 200ms, background 200ms, transform 200ms', cursor: 'default' };
 const featureIcon = { fontSize: '1.4rem', marginBottom: 10 };
 const featureTitle = { fontSize: '0.85rem', fontWeight: 600, color: 'var(--text)', marginBottom: 4 };
 const featureDesc = { fontSize: '0.78rem', color: 'var(--text-secondary)', lineHeight: 1.5 };

@@ -168,6 +168,54 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     doCheck();
     return true;
   }
+  if (message.action === 'EZITERMS_ACCEPT_TERMS') {
+    const payload = message.payload || {};
+    const url = payload.url;
+    if (!url) { sendResponse({ ok: false, error: 'url required' }); return true; }
+    const run = async () => {
+      try {
+        const r = await chrome.storage.local.get(['access_token', 'refresh_token']);
+        let token = r.access_token;
+        if (!token) {
+          // Not logged in — open the side panel so the user can sign in.
+          try {
+            const tab = sender.tab;
+            if (tab?.id != null && chrome.sidePanel?.open) {
+              await chrome.sidePanel.open({ tabId: tab.id });
+            }
+          } catch {}
+          sendResponse({ ok: false, error: 'not_logged_in' });
+          return;
+        }
+        const doFetch = async (tk) => fetch(`${API_BASE_URL}/accepted-terms`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${tk}` },
+          body: JSON.stringify({ url, title: payload.title || '' }),
+        });
+        let resp = await doFetch(token);
+        if (resp.status === 401 && r.refresh_token) {
+          const rr = await fetch(`${API_BASE_URL}/token/refresh`, {
+            method: 'POST', headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ refresh: r.refresh_token }),
+          });
+          if (rr.ok) {
+            const rd = await rr.json();
+            if (rd.access) {
+              token = rd.access;
+              await chrome.storage.local.set({ access_token: rd.access, refresh_token: rd.refresh || r.refresh_token });
+              resp = await doFetch(token);
+            }
+          }
+        }
+        const data = await resp.json().catch(() => ({}));
+        sendResponse({ ok: resp.ok, data });
+      } catch (e) {
+        sendResponse({ ok: false, error: String(e) });
+      }
+    };
+    run();
+    return true;
+  }
   if (message.action === 'GOOGLE_SIGNIN_REQUEST') {
     const manifest = chrome.runtime.getManifest();
     const clientId = manifest.oauth2?.client_id || '';

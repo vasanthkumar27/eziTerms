@@ -131,13 +131,46 @@ Rewrote `TERMS_ANALYZE_PROMPT`: no rigid categorisation checklist, explicit guid
 ### (f) Recursive T&C crawler
 New `services/url_fetcher.py` (httpx + BeautifulSoup) + `/api/fetch-url` endpoint + URL branch on `/api/analyze-terms`. Fetches the starting page, then follows up to 4 **same-origin** links whose path or anchor text matches `(terms|tos|t&c|privacy|legal|eula|user-agreement|conditions)`, concatenates the visible text, and analyses the whole thing in one LLM call. Verified against iubenda.com — 5 pages fetched, 5 distinct risks surfaced, score 10.91 (appropriate for a compliance tool, not paranoid).
 
-### Files touched this session
-- **Backend**: `main.py` (schema + new endpoints), `services/termsanalyse.py` (cache + parser), `services/prompts.py` (rewritten), `services/url_fetcher.py` (new), `requirements.txt` (+beautifulsoup4).
-- **Frontend**: `App.jsx` (markdown rendering, URL branch update), `package.json` (+react-markdown, +remark-gfm).
-- **Extension**: `ExtensionMainContent.tsx` (auto-switch to current-page tab, just-scanned pulse, keyframes).
+## Update — Sign-up watcher + full glass pass (2026-04-16)
 
-### Live verification
-- URL crawler: `iubenda.com/en/terms-and-conditions-generator` → 5 pages → 5-item result, 10.9% risk.
-- Cache: same URL second run → **200 ms** (down from 17 s).
-- Chatbot markdown: returns a 12-line reply with a heading, three bold-subheaded items, nested bullets, and a TL;DR — renders as formatted markdown in the UI.
-- Extension: rebuilt dist + dist.zip with the pulse + auto-switch logic.
+### (g) Sign-up watcher is live
+**Backend**
+- New `accepted_terms` table: `id, user_id, url, title, terms_hash, text_snapshot, risk_score, notify_email, accepted_at, last_checked_at, last_changed_at, last_status, last_error`.
+- Endpoints: `POST /api/accepted-terms` (fetches baseline on create), `GET /api/accepted-terms`, `DELETE /api/accepted-terms/{id}`, `POST /api/accepted-terms/{id}/check` (on-demand recheck).
+- New `services/terms_watcher.py`: SHA-256 hash, unified-diff snippet, `check_one(row, force=True)` + `check_all_due()`. Background `asyncio` task started on FastAPI startup; one pass every `TERMS_WATCH_INTERVAL_SECONDS` (default 6 h), each row respects `TERMS_WATCH_MIN_AGE_SECONDS` minimum age.
+- New `services/email_sender.py`: Resend integration (`RESEND_API_KEY` + `SENDER_EMAIL`), `asyncio.to_thread` wrapper for non-blocking sends, auto-falls-back to a dry-run logger if no key is set. Ready-made HTML/text template with risk score + diff snippet.
+- Manually tested: row created → mutated hash → `/check` triggered change detection → reanalysis found new risk (16.36), dry-run email logged with correct recipient/subject.
+
+**Email provider**: Resend. **Action needed from you**: add `RESEND_API_KEY=re_…` and (optional) `SENDER_EMAIL="EziTerms <you@yourdomain>"` to `backend/.env`, then `sudo supervisorctl restart backend`. Until then, all emails are logged to the backend stderr as `[email:dry-run]` lines so you can see exactly what would go out.
+
+**Frontend**
+- New `Watchlist.jsx` page reachable via a "Watchlist" pill in the nav. Glass item cards show title/URL, status dot, risk score chip, "saved / last checked / changed" timestamps, plus per-row **Check now** and **Remove** buttons. Shows an empty-state card when nothing is saved. Errors render inline.
+- `apiDelete` helper added to `api.js`.
+
+**Extension (content script)**
+- New `src/contentScripts/signupWatcher.ts`. On any page load (outside EziTerms hosts and known IDPs), listens for form `submit` in the capture phase. Heuristic: must have a password + email input, plus either a signup-hinting button/action or a checkbox whose label / nearby anchor contains "agree|accept|terms|conditions|policy|privacy". If matched, finds the T&C link inside the form or on the page and renders a glass toast in the bottom-right: **"Signing up at <host>? … Save & watch / Not now"**.
+- On **Save & watch**, sends `EZITERMS_ACCEPT_TERMS` to background.
+- `background.js` now handles that message: looks up the access token in `chrome.storage`, auto-refreshes on 401, and POSTs `/api/accepted-terms` with the URL + title. If no token, opens the sidepanel so the user can sign in.
+- Watchlist page in the sidepanel wasn't added this pass — the main-app Watchlist is reachable at the same URL so the extension links in the toast implicitly teach users about it. Can be added if you want it in-sidepanel too.
+
+### Full glassmorphism pass (option iii)
+- New CSS tokens in `index.css`: `--glass-bg`, `--glass-bg-strong`, `--glass-bg-subtle`, `--glass-border`, `--glass-blur`, `--glass-shadow`.
+- Utility classes: `.glass`, `.glass-strong`, `.glass-subtle`, `.glass-user`, `.glass-bot`, `.glass-btn`, `.glass-modal`, `.glass-modal-backdrop`, `.glass-risk-card`, `.lift`.
+- `.app-nav` now uses **`padding:var(--nav-top-pad) 24px 10px`** where `--nav-top-pad: max(10px, env(safe-area-inset-top, 0px))`. Fixes the "no top padding" bug and handles iOS notches.
+- Applied across: landing nav, chat nav, chat input dock, user + bot bubbles, login modal (shell + inputs), risk cards, watchlist cards, nav pill button, feature cards, and the content-script signup toast.
+- Added `@keyframes eziJustScanned` for the extension's "just-analyzed" pulse (already wired in last session).
+
+### Live verification screenshots
+1. **Login modal** — fully frosted over the landing hero, rounded 18px radius, soft inner glow, glass form inputs.
+2. **Chat header** — no longer crops content under the top edge; "Watchlist" pill is visible and hover-lifted.
+3. **Watchlist** — iubenda T&C row rendered with 16/100 risk chip, amber "Changed" status, glass Check now / Remove buttons. Data matches backend: `risk_score=16.36`, `last_status='changed'`.
+
+### Files added / changed this session
+**Backend**: `database.py`, `main.py`, `services/email_sender.py` (new), `services/terms_watcher.py` (new), `requirements.txt` (+resend).
+**Frontend**: `index.css` (glass tokens + classes), `App.jsx` (glass nav + watchlist view), `LoginModal.jsx`, `RiskCard.jsx`, `Landing.jsx`, `Watchlist.jsx` (new), `api.js` (+apiDelete).
+**Extension**: `src/content.tsx`, `src/contentScripts/signupWatcher.ts` (new), `src/background.js` (+EZITERMS_ACCEPT_TERMS handler). Dist + `dist.zip` rebuilt.
+
+### Next Action Items
+- **Drop in `RESEND_API_KEY`** (grab from resend.com/api-keys) to activate the real emails. Everything else is wired.
+- Verify the signup toast in a real Chrome + visit a live signup page (github.com/signup, for instance) since the smoke test was backend-only.
+- Optional: add the watchlist view inside the extension sidepanel itself.

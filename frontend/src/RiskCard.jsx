@@ -42,15 +42,13 @@ export default function RiskCard({ result, score }) {
           return (
             <div
               key={i}
+              className="glass-risk-card"
               onClick={() => c.riskReason && toggle(i)}
               style={{
                 padding: '10px 12px',
-                borderRadius: 10,
-                border: `1px solid ${r.border}`,
                 borderLeft: `3px solid ${r.accent}`,
                 background: r.bg,
                 cursor: c.riskReason ? 'pointer' : 'default',
-                transition: 'background 150ms',
               }}
             >
               <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>

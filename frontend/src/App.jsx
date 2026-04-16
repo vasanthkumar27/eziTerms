@@ -5,6 +5,7 @@ import { apiPost, apiUpload, isLoggedIn, logout as apiLogout } from './api';
 import LoginModal from './LoginModal';
 import RiskCard from './RiskCard';
 import Landing from './Landing';
+import Watchlist from './Watchlist';
 
 function riskScore(result) {
   if (!Array.isArray(result) || !result.length) return null;
@@ -35,6 +36,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState(null);
   const [lastTermsText, setLastTermsText] = useState('');
+  const [view, setView] = useState('chat'); // 'chat' | 'watchlist'
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -167,16 +169,29 @@ export default function App() {
   return (
     <div style={{ display: 'flex', flexDirection: 'column', height: '100vh' }}>
       {/* Nav */}
-      <nav style={nav}>
+      <nav className="app-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <span style={logoStyle}>EziTerms</span>
           <span style={badgeStyle}>AI</span>
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => { setStarted(false); }} style={navLink}>Home</button>
+          <button
+            onClick={() => setView(view === 'watchlist' ? 'chat' : 'watchlist')}
+            className="glass-btn"
+            style={navChipBtn}
+            data-testid="nav-watchlist-toggle"
+          >
+            {view === 'watchlist' ? 'Back to chat' : 'Watchlist'}
+          </button>
           <button onClick={handleLogout} style={navLink}>Sign out</button>
         </div>
       </nav>
+
+      {view === 'watchlist' ? (
+        <Watchlist onBack={() => setView('chat')} />
+      ) : (
+      <>
 
       {/* Messages */}
       <main
@@ -191,14 +206,14 @@ export default function App() {
                 <div style={systemBubble}>{m.content}</div>
               ) : m.role === 'user' ? (
                 <div style={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <div style={userBubble}>
+                  <div className="glass-user" style={userBubble}>
                     {m.label && <div style={labelStyle}>{m.label}</div>}
                     <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.content}</div>
                   </div>
                 </div>
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
-                  <div style={botBubble}>
+                  <div className="glass-bot" style={botBubble}>
                     {m.content && (
                       <div style={markdownBody}>
                         <ReactMarkdown
@@ -218,7 +233,7 @@ export default function App() {
 
           {loading && (
             <div style={{ animation: 'fadeIn .2s ease', marginBottom: 16 }}>
-              <div style={botBubble}>
+              <div className="glass-bot" style={botBubble}>
                 <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                   <span style={spinnerStyle} />
                   <span style={{ color: 'var(--text-secondary)' }}>Analyzing...</span>
@@ -231,11 +246,12 @@ export default function App() {
       </main>
 
       {/* Input */}
-      <div style={{ borderTop: '1px solid var(--border)', padding: '12px 16px', background: 'rgba(0,0,0,0.6)', backdropFilter: 'blur(20px)' }}>
+      <div className="glass-subtle" style={inputDock}>
         <form onSubmit={handleSubmit} style={{ maxWidth: 760, margin: '0 auto', display: 'flex', gap: 8 }}>
           <button
             type="button"
             onClick={() => fileRef.current?.click()}
+            className="glass-btn"
             style={attachBtn}
             title="Upload document"
           >
@@ -256,6 +272,8 @@ export default function App() {
           </button>
         </form>
       </div>
+      </>
+      )}
 
       {showLogin && <LoginModal initialMode={initialMode} onSuccess={handleAuthSuccess} onClose={() => setShowLogin(false)} />}
     </div>
@@ -263,19 +281,21 @@ export default function App() {
 }
 
 // ─── Styles ───
-const nav = { display: 'flex', alignItems: 'center', justifyContent: 'space-between', padding: '0 24px', height: 56, borderBottom: '1px solid var(--border)', background: 'rgba(0,0,0,0.5)', backdropFilter: 'blur(20px)', flexShrink: 0 };
 const logoStyle = { fontSize: '0.95rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff' };
 const badgeStyle = { fontSize: '0.55rem', fontWeight: 700, letterSpacing: '0.08em', textTransform: 'uppercase', padding: '2px 6px', borderRadius: 4, background: 'rgba(50,145,255,0.15)', color: 'var(--blue)', border: '1px solid rgba(50,145,255,0.2)' };
 const navLink = { background: 'none', border: 'none', color: 'var(--text-secondary)', fontSize: '0.82rem', cursor: 'pointer', padding: '4px 0', transition: 'color var(--transition)' };
+const navChipBtn = { fontSize: '0.78rem', padding: '6px 12px', borderRadius: 999, cursor: 'pointer', fontWeight: 500 };
+
+const inputDock = { padding: '12px 16px', borderTop: '1px solid var(--glass-border)' };
 
 const systemBubble = { fontSize: '0.8rem', color: 'var(--text-tertiary)', fontStyle: 'italic', padding: '0 4px' };
-const userBubble = { maxWidth: '70%', padding: '10px 14px', borderRadius: '16px 16px 4px 16px', background: 'rgba(255,255,255,0.06)', border: '1px solid var(--border)', fontSize: '0.86rem', color: 'var(--text)' };
-const botBubble = { maxWidth: '80%', padding: '12px 16px', borderRadius: '16px 16px 16px 4px', background: 'var(--bg-card)', border: '1px solid var(--border)', fontSize: '0.86rem', color: 'var(--text)' };
+const userBubble = { maxWidth: '70%', padding: '10px 14px', borderRadius: '16px 16px 4px 16px', fontSize: '0.86rem', color: 'var(--text)' };
+const botBubble = { maxWidth: '80%', padding: '12px 16px', borderRadius: '16px 16px 16px 4px', fontSize: '0.86rem', color: 'var(--text)' };
 const labelStyle = { fontSize: '0.65rem', fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.06em', color: 'var(--text-tertiary)', marginBottom: 4 };
 
-const chatInput = { flex: 1, background: 'var(--bg-elevated)', border: '1px solid var(--border)', borderRadius: 10, color: 'var(--text)', fontSize: '0.88rem', padding: '10px 14px', outline: 'none', transition: 'border-color var(--transition)' };
-const attachBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition)' };
-const sendBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', flexShrink: 0, transition: 'opacity var(--transition)' };
+const chatInput = { flex: 1, background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: 12, color: 'var(--text)', fontSize: '0.88rem', padding: '10px 14px', outline: 'none', transition: 'border-color var(--transition), background var(--transition)', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' };
+const attachBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12, cursor: 'pointer', flexShrink: 0 };
+const sendBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 12, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', flexShrink: 0, transition: 'opacity var(--transition), transform var(--transition)' };
 const spinnerStyle = { display: 'inline-block', width: 14, height: 14, border: '2px solid var(--border)', borderTopColor: 'var(--text-secondary)', borderRadius: '50%', animation: 'spin .6s linear infinite' };
 
 const markdownBody = { lineHeight: 1.6, fontSize: '0.88rem', color: 'var(--text)' };

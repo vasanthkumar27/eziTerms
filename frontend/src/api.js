@@ -75,6 +75,13 @@ export async function apiGet(path) {
   return data;
 }
 
+export async function apiDelete(path) {
+  const res = await apiFetch(path, { method: 'DELETE' });
+  const data = await res.json().catch(() => null);
+  if (!res.ok) throw { status: res.status, data };
+  return data;
+}
+
 export async function apiUpload(path, file, extraFields = {}) {
   const url = `${BASE}${path}`;
   const fd = new FormData();

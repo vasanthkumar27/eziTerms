@@ -92,8 +92,8 @@ export default function LoginModal({ onSuccess, onClose, initialMode }) {
   };
 
   return (
-    <div style={overlay} onClick={onClose}>
-      <div style={modal} onClick={e => e.stopPropagation()}>
+    <div className="glass-modal-backdrop" style={overlay} onClick={onClose}>
+      <div className="glass-modal" style={modal} onClick={e => e.stopPropagation()}>
         <button onClick={onClose} style={closeBtn}>
           <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button>
@@ -146,14 +146,14 @@ export default function LoginModal({ onSuccess, onClose, initialMode }) {
   );
 }
 
-const overlay = { position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(8px)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 200, animation: 'fadeIn .15s ease' };
-const modal = { position: 'relative', background: '#0a0a0a', border: '1px solid var(--border)', borderRadius: 16, padding: '36px 32px 28px', width: '100%', maxWidth: 380, boxShadow: '0 24px 80px rgba(0,0,0,0.6)' };
+const overlay = { display: 'flex', alignItems: 'center', justifyContent: 'center', animation: 'fadeIn .15s ease' };
+const modal = { position: 'relative', padding: '36px 32px 28px', width: '100%', maxWidth: 380 };
 const closeBtn = { position: 'absolute', top: 14, right: 14, background: 'none', border: 'none', color: 'var(--text-tertiary)', cursor: 'pointer', padding: 4, borderRadius: 6 };
 const title = { fontSize: '1.2rem', fontWeight: 700, letterSpacing: '-0.02em', color: '#fff', marginBottom: 4 };
 const subtitle = { fontSize: '0.82rem', color: 'var(--text-secondary)', marginBottom: 24 };
 const labelStyle = { display: 'block', fontSize: '0.78rem', fontWeight: 500, color: 'var(--text-secondary)', marginBottom: 6 };
-const inputStyle = { width: '100%', background: 'var(--bg)', border: '1px solid var(--border)', borderRadius: 8, color: 'var(--text)', fontSize: '0.88rem', padding: '10px 12px', outline: 'none', transition: 'border-color 150ms' };
-const submitBtn = { width: '100%', marginTop: 20, padding: '10px', fontSize: '0.88rem', fontWeight: 600, borderRadius: 8, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', transition: 'opacity 150ms' };
+const inputStyle = { width: '100%', background: 'rgba(255,255,255,0.04)', border: '1px solid var(--glass-border)', borderRadius: 10, color: 'var(--text)', fontSize: '0.88rem', padding: '10px 12px', outline: 'none', transition: 'border-color 150ms, background 150ms', backdropFilter: 'blur(8px)', WebkitBackdropFilter: 'blur(8px)' };
+const submitBtn = { width: '100%', marginTop: 20, padding: '11px', fontSize: '0.88rem', fontWeight: 600, borderRadius: 10, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', transition: 'opacity 150ms, transform 150ms' };
 const errorBox = { padding: '8px 12px', borderRadius: 8, background: 'rgba(239,68,68,0.08)', border: '1px solid rgba(239,68,68,0.2)', color: '#f87171', fontSize: '0.8rem', marginBottom: 16 };
 const googleBtn = { width: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 10, padding: '10px 14px', fontSize: '0.88rem', fontWeight: 500, borderRadius: 8, border: '1px solid var(--border)', background: 'var(--bg-elevated)', color: 'var(--text)', cursor: 'pointer', transition: 'border-color 150ms, background 150ms' };
 const divider = { display: 'flex', alignItems: 'center', gap: 12, margin: '20px 0' };
