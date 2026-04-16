@@ -131,16 +131,23 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
 
   const addOrUpdateTab = useCallback(
     (url: string, data: { termsText: string; analysisResult: RiskEntry[] }) => {
-      const isUpload = url.startsWith('upload:');
-      const tabId = isUpload ? `${urlToId(url)}_${Date.now()}` : urlToId(url);
+      // Guarantee a non-empty URL so a tab is always created - avoids silent
+      // "results vanish" when chrome.scripting cannot read window.location
+      // (e.g. chrome://, PDF viewer, etc.).
+      const safeUrl = url && url.trim().length > 0 ? url : `scan:${Date.now()}`;
+      const isUpload = safeUrl.startsWith('upload:');
+      const isEphemeral = safeUrl.startsWith('scan:');
+      const tabId = (isUpload || isEphemeral)
+        ? `${urlToId(safeUrl)}_${Date.now()}`
+        : urlToId(safeUrl);
       setScanTabs((prev) => {
         const existing = prev.find((t) => t.id === tabId);
         const tab: ScanTab = existing
           ? { ...existing, ...data }
           : {
               id: tabId,
-              url,
-              urlDisplay: urlToDisplay(url),
+              url: safeUrl,
+              urlDisplay: urlToDisplay(safeUrl),
               termsText: data.termsText,
               analysisResult: data.analysisResult,
               chatMessages: [],
@@ -150,7 +157,7 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
         return [tab, ...filtered];
       });
       setActiveTabId(tabId);
-      onNotifyContentScript?.(url, data.analysisResult, data.termsText);
+      onNotifyContentScript?.(safeUrl, data.analysisResult, data.termsText);
     },
     [onNotifyContentScript]
   );
@@ -268,19 +275,28 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
           </div>
         ) : (
           <div style={emptyPane}>
-            <p style={{ color: fusion.textMuted, fontSize: fusion.fontSizeBase, margin: 0, lineHeight: fusion.lineHeightNormal }}>
-              No scan yet. Use <strong style={{ color: fusion.text }}>Scan page</strong> or <strong style={{ color: fusion.text }}>Upload document</strong> below.
-            </p>
-            {useSessionStorage && (
-              <p style={{ color: fusion.textSubtle, fontSize: fusion.fontSizeXs, margin: 0, lineHeight: fusion.lineHeightNormal }}>
-                Session ends when you close the browser or log out.
-              </p>
+            {!loading && !displayError && (
+              <>
+                <p style={{ color: fusion.textMuted, fontSize: fusion.fontSizeBase, margin: 0, lineHeight: fusion.lineHeightNormal }}>
+                  No scan yet. Use <strong style={{ color: fusion.text }}>Scan page</strong> or <strong style={{ color: fusion.text }}>Upload document</strong> below.
+                </p>
+                {useSessionStorage && (
+                  <p style={{ color: fusion.textSubtle, fontSize: fusion.fontSizeXs, margin: 0, lineHeight: fusion.lineHeightNormal }}>
+                    Session ends when you close the browser or log out.
+                  </p>
+                )}
+              </>
             )}
             <TermsAnalyse
               termsText={null}
               setTermsText={() => {}}
               analysisResult={null}
-              setAnalysisResult={() => {}}
+              /* Real setter: promote scan result to a tab even if the URL is empty. */
+              setAnalysisResult={(r) => {
+                if (Array.isArray(r) && r.length > 0) {
+                  addOrUpdateTab(currentPageUrl ?? '', { termsText: '', analysisResult: r });
+                }
+              }}
               analysisError={displayError}
               setAnalysisError={setAnalysisErrorLocal}
               loading={loading}

@@ -157,10 +157,11 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
       (a: RiskEntry, b: RiskEntry) => riskOrder[a.risktype] - riskOrder[b.risktype]
     );
     setAnalysisResult(sortedResults);
-    if (url) {
-      logExtensionActivity(url, 'terms_analyzed', true).catch(() => {});
-      onAnalysisComplete?.(url, sortedResults, text);
-    }
+    // Always promote the scan into a session tab, even when the URL is empty
+    // (e.g. PDF viewer, chrome:// page). Without this, results can silently
+    // disappear in the empty-state pane.
+    logExtensionActivity(url, 'terms_analyzed', true).catch(() => {});
+    onAnalysisComplete?.(url, sortedResults, text);
   };
 
   const analyzeText = async (text: string, pageUrlOverride?: string) => {
@@ -240,12 +241,20 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
 
       const data = results?.[0]?.result as { terms: string; pageUrl: string } | undefined;
       if (!data?.terms || data.terms.trim().length < 100) {
-        setAnalysisError('Not enough text on this page to analyse.');
+        setNoTcPrompt({ text: data?.terms || '', pageUrl: data?.pageUrl || '' });
         return;
       }
 
       setTermsText(data.terms);
       const url = data.pageUrl || '';
+
+      // Friendly T&C check - show "scan anyway" prompt instead of a raw 400 error.
+      const classifyResult = await classifyPageForUi(data.terms);
+      if (classifyResult && !classifyResult.is_tc_page) {
+        setNoTcPrompt({ text: data.terms, pageUrl: url });
+        return;
+      }
+
       await runAnalysisWithText(data.terms, url);
     } catch (err: unknown) {
       const msg = err instanceof Error ? err.message : 'Could not scan this page.';
@@ -611,7 +620,11 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
                     {(entry.risktype === 'none' ? 'low' : entry.risktype).toUpperCase()}
                   </div>
                   <p style={riskSummaryText}>{entry.lineSummary}</p>
-                  <span style={arrowStyle(expandedSummary === entry.lineSummary)}>➡️</span>
+                  <span style={arrowStyle(expandedSummary === entry.lineSummary)} aria-hidden="true">
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                    </svg>
+                  </span>
                 </div>
                 {expandedSummary === entry.lineSummary && (
                   <div style={riskReasonBox}>
@@ -1142,10 +1155,13 @@ const riskSummaryText: React.CSSProperties = {
 
 const arrowStyle = (isExpanded: boolean): React.CSSProperties => ({
   marginLeft: 'auto',
-  fontSize: 18,
+  display: 'inline-flex',
+  alignItems: 'center',
+  justifyContent: 'center',
   transition: 'transform 0.3s ease',
   transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
   color: fusion.textMuted,
+  flexShrink: 0,
 });
 
 const riskReasonBox: React.CSSProperties = {

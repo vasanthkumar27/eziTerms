@@ -37,11 +37,11 @@ const API_ENDPOINTS = {
     CHATBOT_TEXT: '/chatbot',
     CLASSIFY_PAGE: '/classify-page',
 
-    REFRESH_TOKEN: '/token/refresh/',
-    LOGOUT: '/logout/',
-    LOGIN_GOOGLE: '/google-login/',
-    LOGIN_GENERIC: '/login/',
-    SIGNUP_GENERIC: '/signup/',
+    REFRESH_TOKEN: '/token/refresh',
+    LOGOUT: '/logout',
+    LOGIN_GOOGLE: '/google-login',
+    LOGIN_GENERIC: '/login',
+    SIGNUP_GENERIC: '/signup',
 };
 
 export default API_ENDPOINTS;
