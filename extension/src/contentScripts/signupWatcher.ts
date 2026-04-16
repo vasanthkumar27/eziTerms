@@ -1,13 +1,13 @@
 /**
- * Sign-up watcher — lives in the content script and runs on every non-EziTerms
+ * Sign-up watcher — lives in the content script and runs on every non-Distil
  * page. When the user is about to submit a signup form that includes a
  * "terms / agree / accept" checkbox, we capture the linked T&C URL and surface
- * a tiny glass toast asking if they want to save it to the EziTerms watchlist.
+ * a tiny glass toast asking if they want to save it to the Distil watchlist.
  * On confirm, we forward a message to the extension background, which calls
  * the backend via the side-panel's stored auth.
  */
 
-const TOAST_ID = 'eziterms-signup-toast';
+const TOAST_ID = 'distil-signup-toast';
 const SAFE_HOST_BLOCKLIST = [
   'accounts.google.com',
   'appleid.apple.com',
@@ -25,7 +25,7 @@ function isSafeHost(): boolean {
   }
 }
 
-function isEziTermsHost(): boolean {
+function isDistilHost(): boolean {
   try {
     const h = window.location.hostname;
     return (
@@ -106,7 +106,7 @@ function showToast(opts: {
   dismissToast();
   const wrapper = document.createElement('div');
   wrapper.id = TOAST_ID;
-  wrapper.setAttribute('data-testid', 'eziterms-signup-toast');
+  wrapper.setAttribute('data-testid', 'distil-signup-toast');
   wrapper.style.cssText = [
     'position:fixed',
     'z-index:2147483647',
@@ -129,9 +129,9 @@ function showToast(opts: {
   ].join(';');
 
   // Inject keyframes once
-  if (!document.getElementById('eziterms-signup-toast-style')) {
+  if (!document.getElementById('distil-signup-toast-style')) {
     const style = document.createElement('style');
-    style.id = 'eziterms-signup-toast-style';
+    style.id = 'distil-signup-toast-style';
     style.textContent = '@keyframes eziToastIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}';
     document.head.appendChild(style);
   }
@@ -144,22 +144,22 @@ function showToast(opts: {
       <div style="flex:1;min-width:0">
         <div style="font-weight:600;color:#fff;margin-bottom:2px">Signing up at ${safeHost}?</div>
         <div style="color:rgba(255,255,255,0.72);margin-bottom:10px">
-          We found the T&amp;C for this signup. Save it to your EziTerms watchlist and we'll email you if it changes.
+          We found the T&amp;C for this signup. Save it to your Distil watchlist and we'll email you if it changes.
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
-          <button id="eziterms-toast-dismiss" style="background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit">Not now</button>
-          <button id="eziterms-toast-save" data-testid="eziterms-toast-save" style="background:#fff;color:#000;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Save &amp; watch</button>
+          <button id="distil-toast-dismiss" style="background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit">Not now</button>
+          <button id="distil-toast-save" data-testid="distil-toast-save" style="background:#fff;color:#000;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Save &amp; watch</button>
         </div>
         <div style="margin-top:8px;font-size:11.5px;color:rgba(255,255,255,0.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${opts.url}">${opts.url}</div>
       </div>
-      <button id="eziterms-toast-close" aria-label="Close" style="background:transparent;color:rgba(255,255,255,0.45);border:none;cursor:pointer;font-size:18px;line-height:1;padding:0 2px">×</button>
+      <button id="distil-toast-close" aria-label="Close" style="background:transparent;color:rgba(255,255,255,0.45);border:none;cursor:pointer;font-size:18px;line-height:1;padding:0 2px">×</button>
     </div>`;
 
   document.body.appendChild(wrapper);
   const close = () => dismissToast();
-  wrapper.querySelector('#eziterms-toast-dismiss')?.addEventListener('click', close);
-  wrapper.querySelector('#eziterms-toast-close')?.addEventListener('click', close);
-  wrapper.querySelector('#eziterms-toast-save')?.addEventListener('click', () => {
+  wrapper.querySelector('#distil-toast-dismiss')?.addEventListener('click', close);
+  wrapper.querySelector('#distil-toast-close')?.addEventListener('click', close);
+  wrapper.querySelector('#distil-toast-save')?.addEventListener('click', () => {
     opts.onSave();
     close();
   });
@@ -171,7 +171,7 @@ function sendSaveRequest(detail: { url: string; title: string; pageUrl: string }
   try {
     const ext: any = typeof chrome !== 'undefined' ? chrome : null;
     if (!ext?.runtime?.sendMessage) return;
-    ext.runtime.sendMessage({ action: 'EZITERMS_ACCEPT_TERMS', payload: detail }, (_resp: unknown) => {
+    ext.runtime.sendMessage({ action: 'DISTIL_ACCEPT_TERMS', payload: detail }, (_resp: unknown) => {
       // No-op; background handles the API call.
     });
   } catch {
@@ -203,7 +203,7 @@ function onFormSubmitted(ev: SubmitEvent | Event): void {
 
 export function installSignupWatcher(): void {
   if (!isSafeHost()) return;
-  if (isEziTermsHost()) return;
+  if (isDistilHost()) return;
   try {
     // Capture phase so we run even if the site's handler calls stopPropagation later.
     document.addEventListener('submit', onFormSubmitted, true);

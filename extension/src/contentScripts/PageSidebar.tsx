@@ -6,8 +6,8 @@
 import React, { useState, useEffect, useCallback, useRef } from 'react';
 import { getAccessToken } from '../utils/tokenStore';
 import { classifyPageLocal } from '../classifier/tcClassifier';
-import { EZITERMS_OPEN_AND_ANALYZE } from '../types/messages';
-import { isEziTermsShowTcBubble } from '../types/messages';
+import { DISTIL_OPEN_AND_ANALYZE } from '../types/messages';
+import { isDistilShowTcBubble } from '../types/messages';
 import { fusion } from '../theme/fusionTheme';
 import { getAutoAnalyseEnabled } from '../utils/autoAnalyseStorage';
 import { getExtensionEnabled } from '../utils/extensionEnabledStorage';
@@ -39,7 +39,7 @@ const PageSidebar: React.FC = () => {
     if (!ext?.runtime?.onMessage) return;
     const handler = (message: unknown) => {
       try {
-        if (isEziTermsShowTcBubble(message)) {
+        if (isDistilShowTcBubble(message)) {
           const { text, url } = message.payload;
           if (dismissedForUrlRef.current === url) return;
           setPendingAnalyze({ text, url });
@@ -101,8 +101,8 @@ const PageSidebar: React.FC = () => {
     try {
       const ext = getExtensionApi();
       if (!ext?.storage?.session || !ext?.runtime) return;
-      await ext.storage.session.set({ eziterms_pending_analyze: pending });
-      ext.runtime.sendMessage({ type: EZITERMS_OPEN_AND_ANALYZE }).catch(() => {});
+      await ext.storage.session.set({ distil_pending_analyze: pending });
+      ext.runtime.sendMessage({ type: DISTIL_OPEN_AND_ANALYZE }).catch(() => {});
       setShowClickIconHint(true);
     } catch { /* Extension context invalidated */ }
   }, [pendingAnalyze]);
@@ -133,7 +133,7 @@ const PageSidebar: React.FC = () => {
     boxShadow: '0 12px 40px rgba(0,0,0,0.5)',
     zIndex: 2147483647,
     fontFamily: fusion.font,
-    animation: 'eziterms-tc-cloud-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
+    animation: 'distil-tc-cloud-in 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)',
     pointerEvents: 'auto',
   };
 
@@ -144,7 +144,7 @@ const PageSidebar: React.FC = () => {
       {showClickIconHint && (
         <div style={hintStyle} role="status" aria-live="polite">
           <p style={{ margin: 0, fontSize: 13, color: fusion.text, fontWeight: 500 }}>
-            Click the <strong>EziTerms</strong> icon in your browser toolbar to open and analyze.
+            Click the <strong>Distil</strong> icon in your browser toolbar to open and analyze.
           </p>
           <button
             type="button"
@@ -176,7 +176,7 @@ const PageSidebar: React.FC = () => {
           <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
             <button
               type="button"
-              data-eziterms-btn="primary"
+              data-distil-btn="primary"
               onClick={handleAnalyzeInExtension}
               style={{
                 padding: '10px 18px',
@@ -195,7 +195,7 @@ const PageSidebar: React.FC = () => {
             </button>
             <button
               type="button"
-              data-eziterms-btn="secondary"
+              data-distil-btn="secondary"
               onClick={handleNotNow}
               style={{
                 padding: '10px 16px',

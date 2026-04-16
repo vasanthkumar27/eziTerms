@@ -297,7 +297,7 @@ const Authorization: React.FC<AuthorizationProps> = ({ onAuthSuccess }) => {
           />
           <button
             type="button"
-            data-eziterms-btn="primary"
+            data-distil-btn="primary"
             onClick={handleProfileComplete}
             style={loading ? disabledButtonStyle : buttonStyle}
             disabled={loading}
@@ -372,7 +372,7 @@ const Authorization: React.FC<AuthorizationProps> = ({ onAuthSuccess }) => {
 
         <button
           type="button"
-          data-eziterms-btn="primary"
+          data-distil-btn="primary"
           onClick={handleSubmit}
           style={loading ? disabledButtonStyle : buttonStyle}
           disabled={loading}
@@ -402,7 +402,7 @@ const Authorization: React.FC<AuthorizationProps> = ({ onAuthSuccess }) => {
 
         <button
           type="button"
-          data-eziterms-btn="primary"
+          data-distil-btn="primary"
           onClick={handleGoogleSignIn}
           style={loading ? disabledGoogleButtonStyle : googleButtonStyle}
           disabled={loading}

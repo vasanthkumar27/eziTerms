@@ -25,7 +25,7 @@ const LoginRedirectPage: React.FC = () => {
       <div style={card}>
         <h2 style={titleStyle}>Sign in to continue</h2>
         <p style={messageStyle}>
-          Log in on the EziTerms website to use the extension.
+          Log in on the Distil website to use the extension.
         </p>
         <button
           type="button"

@@ -9,7 +9,7 @@ declare global {
   }
 }
 
-// Install the signup watcher on every page load (it self-skips on EziTerms hosts
+// Install the signup watcher on every page load (it self-skips on Distil hosts
 // and known IDP origins).
 installSignupWatcher();
 

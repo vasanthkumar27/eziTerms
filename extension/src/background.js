@@ -29,8 +29,8 @@ if (chrome.sidePanel?.onClosed?.addListener) {
 
 function setToolbarIcon(isDark) {
   const path = isDark
-    ? 'assets/eziterms-Logo-icon-dark-theme.png'
-    : 'assets/eziterms-Logo-icon-light-theme.png';
+    ? 'assets/distil-Logo-icon-dark-theme.png'
+    : 'assets/distil-Logo-icon-light-theme.png';
   try {
     chrome.action.setIcon({ path: { 16: path, 32: path, 48: path } }).catch(() => {});
   } catch (e) {
@@ -55,12 +55,12 @@ chrome.runtime.onInstalled.addListener(() => {
 ensureOpenSidePanelOnToolbarClick();
 
 chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
-  if (message.type === 'EZITERMS_SET_THEME_ICON') {
+  if (message.type === 'DISTIL_SET_THEME_ICON') {
     setToolbarIcon(message.isDark ?? false);
     sendResponse({ ok: true });
     return false;
   }
-  if (message.type === 'EZITERMS_OPEN_AND_ANALYZE') {
+  if (message.type === 'DISTIL_OPEN_AND_ANALYZE') {
     const tabId = sender.tab?.id ?? lastActiveTabId;
     const windowId = sender.tab?.windowId ?? lastActiveWindowId;
     const opts = tabId != null ? { tabId } : (windowId != null ? { windowId } : null);
@@ -71,7 +71,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     try {
       chrome.sidePanel.open(opts).then(() => {
         setTimeout(() => {
-          chrome.runtime.sendMessage({ type: 'EZITERMS_READ_PENDING_ANALYZE' }).catch(() => {});
+          chrome.runtime.sendMessage({ type: 'DISTIL_READ_PENDING_ANALYZE' }).catch(() => {});
         }, 250);
         sendResponse({ ok: true });
       }).catch(() => sendResponse({ ok: false }));
@@ -168,7 +168,7 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
     doCheck();
     return true;
   }
-  if (message.action === 'EZITERMS_ACCEPT_TERMS') {
+  if (message.action === 'DISTIL_ACCEPT_TERMS') {
     const payload = message.payload || {};
     const url = payload.url;
     if (!url) { sendResponse({ ok: false, error: 'url required' }); return true; }

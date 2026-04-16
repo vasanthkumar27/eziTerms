@@ -1,6 +1,6 @@
 {
   "manifest_version": 3,
-  "name": "EziTerms",
+  "name": "Distil",
   "version": "1.0",
   "key": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAiwLEGuHygbN4k+fEMCo/9YoBWMtyk6T0v/7AFYSlJ93WpTZAPKIE2xU4s6TnCMnVSuYcLKJtAi7KIIoFUccPY/kJ4rqDR3yvQGb/TCOZT2NxGiAw9VCN1TQYaw9IOniSN4iBVlzItpiqYWtWKCAxGP+JNebXvjJOEB5UbRXLhzc/bipQe8uM6kPo7fiTt/nfscXZh2JbuqgcjUZa8tE/tKsrKBBEIBo72KvAsn451yhQ2vkbJ+m1R8RWB1j6TfEwtzI8z2AEQQiffElQDj/vTE+l6lXTGSgFQCObcSz/gS8OjqAwB3N6beygywFEvVH4wjUT3uM7ugtbCsjV4OMhCwIDAQAB",
   "permissions": [
@@ -20,11 +20,11 @@
     "http://localhost:5173/*"
   ],
   "action": {
-    "default_title": "EziTerms",
+    "default_title": "Distil",
     "default_icon": {
-      "16": "assets/eziterms-Logo-icon-light-theme.png",
-      "32": "assets/eziterms-Logo-icon-light-theme.png",
-      "48": "assets/eziterms-Logo-icon-light-theme.png"
+      "16": "assets/distil-Logo-icon-light-theme.png",
+      "32": "assets/distil-Logo-icon-light-theme.png",
+      "48": "assets/distil-Logo-icon-light-theme.png"
     }
   },
   "side_panel": {

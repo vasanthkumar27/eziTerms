@@ -15,7 +15,7 @@ function tokens() {
 function setTokens(access, refresh) {
   if (access) localStorage.setItem('access_token', access);
   if (refresh) localStorage.setItem('refresh_token', refresh);
-  window.dispatchEvent(new CustomEvent('eziterms-tokens-updated', {
+  window.dispatchEvent(new CustomEvent('distil-tokens-updated', {
     detail: { access, refresh },
   }));
 }
@@ -24,8 +24,8 @@ export function clearTokens() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('session_id');
-  window.dispatchEvent(new CustomEvent('eziterms-tokens-updated', { detail: { access: null, refresh: null } }));
-  window.dispatchEvent(new CustomEvent('eziterms-logout'));
+  window.dispatchEvent(new CustomEvent('distil-tokens-updated', { detail: { access: null, refresh: null } }));
+  window.dispatchEvent(new CustomEvent('distil-logout'));
 }
 
 async function tryRefresh() {

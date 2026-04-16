@@ -1,5 +1,5 @@
 /**
- * Extension on/off — switch only (no label). Controls chrome.storage eziterms_extension_enabled.
+ * Extension on/off — switch only (no label). Controls chrome.storage distil_extension_enabled.
  */
 import React, { useEffect, useState } from 'react';
 import { getExtensionEnabled, setExtensionEnabled } from '../utils/extensionEnabledStorage';
@@ -33,7 +33,7 @@ type ExtensionEnabledSwitchProps = {
 };
 
 export const ExtensionEnabledSwitch: React.FC<ExtensionEnabledSwitchProps> = ({
-  title = 'When off, EziTerms hides on web pages (side panel stays available from the toolbar)',
+  title = 'When off, Distil hides on web pages (side panel stays available from the toolbar)',
 }) => {
   const [on, setOn] = useState(true);
 
@@ -56,7 +56,7 @@ export const ExtensionEnabledSwitch: React.FC<ExtensionEnabledSwitchProps> = ({
       type="button"
       role="switch"
       aria-checked={on}
-      aria-label="EziTerms on web pages"
+      aria-label="Distil on web pages"
       title={title}
       onClick={toggle}
       style={{

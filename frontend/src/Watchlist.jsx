@@ -144,7 +144,7 @@ export default function Watchlist() {
               Nothing on your watchlist yet.
             </div>
             <div style={{ color: 'var(--text-secondary)', fontSize: 13 }}>
-              Add a T&amp;C URL above, or accept terms through the EziTerms Chrome extension — it'll
+              Add a T&amp;C URL above, or accept terms through the Distil Chrome extension — it'll
               save them here automatically.
             </div>
           </div>

@@ -414,7 +414,7 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
                   <span style={maskingModalTitle}>Masked preview</span>
                   <span style={maskingModalSubTitle}>Sensitive details are hidden before analysis.</span>
                 </div>
-                <button type="button" data-eziterms-btn="icon" onClick={handleMaskingCancel} aria-label="Close" style={maskingCloseBtn}>
+                <button type="button" data-distil-btn="icon" onClick={handleMaskingCancel} aria-label="Close" style={maskingCloseBtn}>
                   ×
                 </button>
               </div>
@@ -424,10 +424,10 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
               </div>
               <div style={maskedTextPreviewModal}>{maskingPending.maskedText}</div>
               <div style={maskingModalFooter}>
-                <button type="button" data-eziterms-btn="secondary" onClick={handleMaskingCancel} style={secondaryButton}>
+                <button type="button" data-distil-btn="secondary" onClick={handleMaskingCancel} style={secondaryButton}>
                   Cancel upload
                 </button>
-                <button type="button" data-eziterms-btn="primary" onClick={handleMaskingProceed} style={mainButton}>
+                <button type="button" data-distil-btn="primary" onClick={handleMaskingProceed} style={mainButton}>
                   Continue with masked text
                 </button>
               </div>
@@ -477,7 +477,7 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
             <div style={infoBox}>
               <p style={{ margin: 0, lineHeight: fusion.lineHeightNormal, fontSize: fusion.fontSizeBase }}>Scan this page or upload a document to detect risks in terms and privacy policies.</p>
             </div>
-            <button type="button" data-eziterms-btn="primary" style={mainButton} onClick={handleClick}>
+            <button type="button" data-distil-btn="primary" style={mainButton} onClick={handleClick}>
               Scan page
             </button>
             <div style={uploadSectionDivider} />
@@ -524,24 +524,24 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
         {loading && (
           <div style={loaderContainer}>
             {maskingAnimating ? (
-              <div style={maskingWordMaskShell} className="eziterms-mask-viewport">
-                <div className="eziterms-mask-stream">
+              <div style={maskingWordMaskShell} className="distil-mask-viewport">
+                <div className="distil-mask-stream">
                   {MASKING_WORD_LINES.map((line, lineIdx) => (
-                    <div key={lineIdx} className="eziterms-mask-line">
+                    <div key={lineIdx} className="distil-mask-line">
                       {line.map((word, tokenIdx) => (
                         <span
                           key={`${lineIdx}-${tokenIdx}`}
-                          className="eziterms-mask-token"
+                          className="distil-mask-token"
                           style={{ ['--ez-mask-delay' as string]: `${(lineIdx * 0.18) + (tokenIdx * 0.1)}s` }}
                         >
-                          <span className="eziterms-mask-token-text">{word}</span>
-                          <span className="eziterms-mask-token-block">████</span>
+                          <span className="distil-mask-token-text">{word}</span>
+                          <span className="distil-mask-token-block">████</span>
                         </span>
                       ))}
                     </div>
                   ))}
                 </div>
-                <div className="eziterms-mask-progress">
+                <div className="distil-mask-progress">
                   <span />
                 </div>
               </div>
@@ -562,8 +562,8 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
             <p style={{ margin: 0, marginBottom: fusion.space2, fontWeight: fusion.fontWeightMedium }}>This page doesn’t look like it contains Terms & Conditions or Privacy policies.</p>
             <p style={{ margin: 0, fontSize: fusion.fontSizeSm, color: fusion.textMuted }}>You can still run a scan if you’re sure.</p>
             <div style={noTcActionsRow}>
-              <button type="button" data-eziterms-btn="secondary" onClick={handleClear} style={secondaryButton}>Try again</button>
-              <button type="button" data-eziterms-btn="primary" onClick={handleScanAnyway} style={mainButton}>Scan anyway</button>
+              <button type="button" data-distil-btn="secondary" onClick={handleClear} style={secondaryButton}>Try again</button>
+              <button type="button" data-distil-btn="primary" onClick={handleScanAnyway} style={mainButton}>Scan anyway</button>
             </div>
           </div>
         )}
@@ -571,7 +571,7 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
         {analysisError && !noTcPrompt && (
           <div style={errorBox}>
             <p style={{ margin: 0, marginBottom: fusion.space4 }}>{analysisError}</p>
-            <button type="button" data-eziterms-btn="primary" onClick={handleClear} style={mainButton}>Try again</button>
+            <button type="button" data-distil-btn="primary" onClick={handleClear} style={mainButton}>Try again</button>
           </div>
         )}
 
@@ -633,7 +633,7 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
                 )}
               </div>
             ))}
-            <button type="button" data-eziterms-btn="secondary" onClick={handleClear} style={{ ...secondaryButton, marginTop: 12 }}>
+            <button type="button" data-distil-btn="secondary" onClick={handleClear} style={{ ...secondaryButton, marginTop: 12 }}>
               New scan
             </button>
           </div>
@@ -816,12 +816,12 @@ const loader3dRingBase: React.CSSProperties = {
 
 const loader3dOrbitOuter: React.CSSProperties = {
   ...loader3dRingBase,
-  animation: 'eziterms-3d-orbit-outer 1.2s linear infinite',
+  animation: 'distil-3d-orbit-outer 1.2s linear infinite',
 };
 
 const loader3dOrbitMid: React.CSSProperties = {
   ...loader3dRingBase,
-  animation: 'eziterms-3d-orbit-mid 1.8s linear infinite reverse',
+  animation: 'distil-3d-orbit-mid 1.8s linear infinite reverse',
   inset: 8,
   borderTopColor: 'rgba(50, 145, 255, 0.7)',
   borderRightColor: 'rgba(50, 145, 255, 0.25)',
@@ -829,7 +829,7 @@ const loader3dOrbitMid: React.CSSProperties = {
 
 const loader3dOrbitInner: React.CSSProperties = {
   ...loader3dRingBase,
-  animation: 'eziterms-3d-orbit-inner 2.4s linear infinite',
+  animation: 'distil-3d-orbit-inner 2.4s linear infinite',
   inset: 16,
   borderTopColor: 'rgba(50, 145, 255, 0.5)',
   borderRightColor: 'rgba(50, 145, 255, 0.15)',
@@ -841,7 +841,7 @@ const loader3dCore: React.CSSProperties = {
   borderRadius: '50%',
   background: `radial-gradient(circle at 30% 30%, rgba(50, 145, 255, 0.7), rgba(50, 145, 255, 0.2))`,
   boxShadow: '0 0 20px rgba(50, 145, 255, 0.3)',
-  animation: 'eziterms-3d-pulse 1.5s ease-in-out infinite',
+  animation: 'distil-3d-pulse 1.5s ease-in-out infinite',
 };
 
 const loaderText: React.CSSProperties = {

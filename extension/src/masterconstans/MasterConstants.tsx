@@ -11,7 +11,7 @@ const bootstrapUrl = envOverride
 const envWebsite = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WEBSITE_BASE_URL)
   ? String(import.meta.env.VITE_WEBSITE_BASE_URL).trim().replace(/\/$/, '')
   : '';
-const websiteBaseUrl = envWebsite || (useAws ? 'https://eziterms.haptix.in' : 'http://localhost:5173');
+const websiteBaseUrl = envWebsite || (useAws ? 'https://distil.haptix.in' : 'http://localhost:5173');
 
 export function getWebsiteBaseUrl(): string {
   return websiteBaseUrl;

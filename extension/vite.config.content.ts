@@ -18,7 +18,7 @@ export default defineConfig(({ mode }) => {
       output: {
         entryFileNames: 'content.js',
         format: 'iife',
-        name: 'EziTermsContent',
+        name: 'DistilContent',
       },
     },
   },

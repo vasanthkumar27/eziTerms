@@ -3,7 +3,7 @@ export default function Landing({ authed, onStart, onLogin, onLogout }) {
     <div style={{ minHeight: '100vh', display: 'flex', flexDirection: 'column' }}>
       {/* Nav */}
       <nav className="app-nav" style={{ padding: 'var(--nav-top-pad) 32px 10px 32px' }}>
-        <span style={logo}>EziTerms</span>
+        <span style={logo}>Distil</span>
         <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
           {authed ? (
             <>
@@ -63,7 +63,7 @@ export default function Landing({ authed, onStart, onLogin, onLogout }) {
 
       {/* Footer */}
       <footer style={{ textAlign: 'center', padding: '32px 0', fontSize: '0.75rem', color: 'var(--text-tertiary)', borderTop: '1px solid var(--border)' }}>
-        EziTerms — AI that reads the fine print so you don't have to.
+        Distil — AI that reads the fine print so you don't have to.
       </footer>
     </div>
   );

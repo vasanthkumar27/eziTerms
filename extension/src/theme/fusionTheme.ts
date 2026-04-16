@@ -1,5 +1,5 @@
 /**
- * EziTerms Extension Design System
+ * Distil Extension Design System
  * Matches the website: pure black base, monochrome palette, blue accent, translucent glass.
  */
 

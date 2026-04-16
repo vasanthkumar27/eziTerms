@@ -1,18 +1,18 @@
 (function () {
-  if (window.__ezitermsTriggerInjected) return;
-  window.__ezitermsTriggerInjected = true;
+  if (window.__distilTriggerInjected) return;
+  window.__distilTriggerInjected = true;
 
-  const BUTTON_ID = 'eziterms-sidebar-trigger';
-  const STORAGE_KEY = 'eziterms_sidebar_open';
+  const BUTTON_ID = 'distil-sidebar-trigger';
+  const STORAGE_KEY = 'distil_sidebar_open';
   const ALLOWED_ORIGINS = ['http://localhost:5173', 'https://localhost:5173'];
 
   window.addEventListener('message', (ev) => {
-    if (ev.data?.type !== 'EZITERMS_GOOGLE_SIGNIN_REQUEST' || !ALLOWED_ORIGINS.includes(ev.origin)) return;
+    if (ev.data?.type !== 'DISTIL_GOOGLE_SIGNIN_REQUEST' || !ALLOWED_ORIGINS.includes(ev.origin)) return;
     const requestId = ev.data.requestId || 'default';
     chrome.runtime.sendMessage({ action: 'GOOGLE_SIGNIN_REQUEST' }, (res) => {
       const payload = res
-        ? { type: 'EZITERMS_GOOGLE_SIGNIN_RESPONSE', requestId, token: res.token, error: res.error }
-        : { type: 'EZITERMS_GOOGLE_SIGNIN_RESPONSE', requestId, error: chrome.runtime?.lastError?.message || 'Extension not responding' };
+        ? { type: 'DISTIL_GOOGLE_SIGNIN_RESPONSE', requestId, token: res.token, error: res.error }
+        : { type: 'DISTIL_GOOGLE_SIGNIN_RESPONSE', requestId, error: chrome.runtime?.lastError?.message || 'Extension not responding' };
       window.postMessage(payload, ev.origin);
     });
   });
@@ -20,7 +20,7 @@
   function createButton() {
     const btn = document.createElement('button');
     btn.id = BUTTON_ID;
-    btn.setAttribute('aria-label', 'Open EziTerms');
+    btn.setAttribute('aria-label', 'Open Distil');
     btn.innerHTML = `
       <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
         <path d="M12 2L2 7l10 5 10-5-10-5z" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>

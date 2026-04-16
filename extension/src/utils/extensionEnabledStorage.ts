@@ -5,7 +5,7 @@
 
 import { getExtensionApi, isInvalidatedError } from './extensionContext';
 
-const STORAGE_KEY = 'eziterms_extension_enabled';
+const STORAGE_KEY = 'distil_extension_enabled';
 export const DEFAULT_EXTENSION_ENABLED = true;
 
 export async function getExtensionEnabled(): Promise<boolean> {

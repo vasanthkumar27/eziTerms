@@ -8,7 +8,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { fusion } from '../theme/fusionTheme';
 import { getAutoAnalyseEnabled, setAutoAnalyseEnabled, DEFAULT_AUTO_ANALYSE_ENABLED } from '../utils/autoAnalyseStorage';
 
-const STORAGE_KEY = 'eziterms_auto_analyse_enabled';
+const STORAGE_KEY = 'distil_auto_analyse_enabled';
 
 const AutoAnalyseToggle: React.FC = () => {
   const [enabled, setEnabled] = useState(DEFAULT_AUTO_ANALYSE_ENABLED);

@@ -171,7 +171,7 @@ export default function App() {
       {/* Nav */}
       <nav className="app-nav">
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <span style={logoStyle}>EziTerms</span>
+          <span style={logoStyle}>Distil</span>
           <span style={badgeStyle}>AI</span>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>

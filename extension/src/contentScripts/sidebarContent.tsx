@@ -1,5 +1,5 @@
 /**
- * Content script entry: injects EziTerms in-page sidebar and mounts React PageSidebar.
+ * Content script entry: injects Distil in-page sidebar and mounts React PageSidebar.
  * Runs on all pages (matches: <all_urls>). Uses shadow DOM to isolate styles from host page.
  *
  * Token sync: Keeps localStorage (website) and chrome.storage.local (extension) in sync
@@ -27,7 +27,7 @@ const envWebsite = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_
   ? String(import.meta.env.VITE_WEBSITE_BASE_URL).trim().replace(/\/$/, '')
   : '';
 
-const EZITERMS_WEBSITE_ORIGINS: string[] = [
+const DISTIL_WEBSITE_ORIGINS: string[] = [
   'http://localhost:5173',
   'https://localhost:5173',
   'http://localhost:3000',
@@ -40,7 +40,7 @@ const EZITERMS_WEBSITE_ORIGINS: string[] = [
   'https://127.0.0.1:3000',
   'https://haptix.in',
   'https://www.haptix.in',
-  'https://eziterms.haptix.in',
+  'https://distil.haptix.in',
   ...(envWebsite ? [envWebsite] : []),
 ];
 
@@ -50,16 +50,16 @@ function isJwtFormat(s: unknown): boolean {
   return parts.length === 3 && parts.every((p) => p.length > 0);
 }
 
-function isEziTermsWebsite(): boolean {
+function isDistilWebsite(): boolean {
   try {
-    return EZITERMS_WEBSITE_ORIGINS.some((o) => window.location.origin === o);
+    return DISTIL_WEBSITE_ORIGINS.some((o) => window.location.origin === o);
   } catch {
     return false;
   }
 }
 
 function syncChromeToLocalStorage(): void {
-  if (!isEziTermsWebsite()) return;
+  if (!isDistilWebsite()) return;
   try {
     const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
     if (!ext?.storage?.local) return;
@@ -88,9 +88,9 @@ function syncChromeToLocalStorage(): void {
         const actuallyChanged = accessChanged || refreshChanged || sessionChanged || tokensRemoved;
         if (actuallyChanged) {
           if (hasValidTokens) {
-            window.dispatchEvent(new CustomEvent('eziterms-tokens-synced'));
+            window.dispatchEvent(new CustomEvent('distil-tokens-synced'));
           } else {
-            window.dispatchEvent(new CustomEvent('eziterms-logout'));
+            window.dispatchEvent(new CustomEvent('distil-logout'));
           }
         }
       } catch { /* Extension context invalidated */ }
@@ -98,10 +98,10 @@ function syncChromeToLocalStorage(): void {
   } catch { /* Extension context invalidated */ }
 }
 
-const LOGGED_OUT_FLAG = 'eziterms_logged_out';
+const LOGGED_OUT_FLAG = 'distil_logged_out';
 
 function syncLocalStorageToChromeOnLoad(): void {
-  if (!isEziTermsWebsite()) return;
+  if (!isDistilWebsite()) return;
   try {
     const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
     if (!ext?.storage?.local) return;
@@ -113,7 +113,7 @@ function syncLocalStorageToChromeOnLoad(): void {
       localStorage.removeItem(REFRESH_KEY);
       localStorage.removeItem(SESSION_KEY);
       try { ext.storage.local.remove([LOGGED_OUT_FLAG]); } catch { /* context invalidated */ }
-      window.dispatchEvent(new CustomEvent('eziterms-logout'));
+      window.dispatchEvent(new CustomEvent('distil-logout'));
       return;
     }
     const chromeHasTokens = (r[ACCESS_KEY] && isJwtFormat(r[ACCESS_KEY])) || (r[REFRESH_KEY] && isJwtFormat(r[REFRESH_KEY]));
@@ -148,7 +148,7 @@ function syncLocalStorageToChrome(
   try {
     const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
     if (!ext?.storage?.local) return;
-    const onTrustedOrigin = requireOrigin ? isEziTermsWebsite() : true;
+    const onTrustedOrigin = requireOrigin ? isDistilWebsite() : true;
     if (!onTrustedOrigin) return;
     if (access === null && refresh === null) {
       ext.storage.local.remove([ACCESS_KEY, REFRESH_KEY, SESSION_KEY]);
@@ -159,7 +159,7 @@ function syncLocalStorageToChrome(
       if (sessionId != null) items[SESSION_KEY] = String(sessionId);
       if (Object.keys(items).length) {
         ext.storage.local.set(items);
-        ext.storage.local.remove(['eziterms_logged_out']);
+        ext.storage.local.remove(['distil_logged_out']);
       }
     }
   } catch { /* Extension context invalidated */ }
@@ -168,12 +168,12 @@ function syncLocalStorageToChrome(
 try {
   const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
   if (ext?.storage?.local) {
-    if (isEziTermsWebsite()) {
+    if (isDistilWebsite()) {
       syncChromeToLocalStorage();
       syncLocalStorageToChromeOnLoad();
 
       // Poll localStorage for token changes from SPA login/logout flows that
-      // don't dispatch the eziterms-tokens-updated custom event.
+      // don't dispatch the distil-tokens-updated custom event.
       let lastSeenAccess = localStorage.getItem(ACCESS_KEY);
       setInterval(() => {
         try {
@@ -192,13 +192,13 @@ try {
     ext.storage.onChanged.addListener((changes: Record<string, { newValue?: unknown }>, namespace: string) => {
       try {
         if (namespace === 'local' && (changes[ACCESS_KEY] || changes[REFRESH_KEY] || changes[SESSION_KEY])) {
-          if (isEziTermsWebsite()) syncChromeToLocalStorage();
+          if (isDistilWebsite()) syncChromeToLocalStorage();
           const accessChange = changes[ACCESS_KEY];
           if (accessChange) {
             if (accessChange.newValue === undefined) {
-              window.dispatchEvent(new CustomEvent('eziterms-logout'));
+              window.dispatchEvent(new CustomEvent('distil-logout'));
             } else if (accessChange.newValue && typeof accessChange.newValue === 'string') {
-              window.dispatchEvent(new CustomEvent('eziterms-tokens-synced'));
+              window.dispatchEvent(new CustomEvent('distil-tokens-synced'));
             }
           }
         }
@@ -206,11 +206,11 @@ try {
     });
   }
 } catch (e) {
-  console.warn('[EziTerms] Storage listener setup failed:', e);
+  console.warn('[Distil] Storage listener setup failed:', e);
 }
 
 if (typeof window !== 'undefined') {
-  window.addEventListener('eziterms-tokens-updated', ((ev: CustomEvent<{ access?: string | null; refresh?: string | null; sessionId?: string | null }>) => {
+  window.addEventListener('distil-tokens-updated', ((ev: CustomEvent<{ access?: string | null; refresh?: string | null; sessionId?: string | null }>) => {
     const d = ev?.detail;
     if (!d) return;
     const access = d.access ?? null;
@@ -220,20 +220,20 @@ if (typeof window !== 'undefined') {
     syncLocalStorageToChrome(access, refresh, sessionId, !hasValidTokens);
   }) as EventListener);
 
-  window.addEventListener('eziterms-request-auth', () => {
-    if (isEziTermsWebsite()) syncChromeToLocalStorage();
+  window.addEventListener('distil-request-auth', () => {
+    if (isDistilWebsite()) syncChromeToLocalStorage();
   });
 
-  window.addEventListener('eziterms-logout', () => {
+  window.addEventListener('distil-logout', () => {
     try {
       const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
       if (!ext?.storage) return;
-      const keysToRemove: string[] = [ACCESS_KEY, REFRESH_KEY, SESSION_KEY, 'eziterms_scan_tabs'];
-      if (isEziTermsWebsite()) keysToRemove.push(LOGGED_OUT_FLAG);
+      const keysToRemove: string[] = [ACCESS_KEY, REFRESH_KEY, SESSION_KEY, 'distil_scan_tabs'];
+      if (isDistilWebsite()) keysToRemove.push(LOGGED_OUT_FLAG);
       ext.storage.local.remove(keysToRemove);
-      ext.storage.session?.remove(['eziterms_scan_tabs', 'eziterms_pending_analyze']);
+      ext.storage.session?.remove(['distil_scan_tabs', 'distil_pending_analyze']);
     } catch { /* Extension context invalidated */ }
-    if (isEziTermsWebsite()) {
+    if (isDistilWebsite()) {
       localStorage.removeItem(ACCESS_KEY);
       localStorage.removeItem(REFRESH_KEY);
       localStorage.removeItem(SESSION_KEY);
@@ -241,7 +241,7 @@ if (typeof window !== 'undefined') {
   });
 
   window.addEventListener('message', (ev: MessageEvent) => {
-    if (ev.data?.type !== 'EZITERMS_GOOGLE_SIGNIN_REQUEST' || !EZITERMS_WEBSITE_ORIGINS.includes(ev.origin)) return;
+    if (ev.data?.type !== 'DISTIL_GOOGLE_SIGNIN_REQUEST' || !DISTIL_WEBSITE_ORIGINS.includes(ev.origin)) return;
     const requestId = ev.data.requestId ?? 'default';
     try {
       const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
@@ -250,8 +250,8 @@ if (typeof window !== 'undefined') {
         try {
           const lastErr = (ext as { runtime?: { lastError?: { message?: string } } }).runtime?.lastError?.message;
           const payload = res?.ok && res.token
-            ? { type: 'EZITERMS_GOOGLE_SIGNIN_RESPONSE', requestId, token: res.token, error: res.error }
-            : { type: 'EZITERMS_GOOGLE_SIGNIN_RESPONSE', requestId, error: res?.error ?? lastErr ?? 'Extension not responding' };
+            ? { type: 'DISTIL_GOOGLE_SIGNIN_RESPONSE', requestId, token: res.token, error: res.error }
+            : { type: 'DISTIL_GOOGLE_SIGNIN_RESPONSE', requestId, error: res?.error ?? lastErr ?? 'Extension not responding' };
           window.postMessage(payload, ev.origin);
         } catch { /* Extension context invalidated */ }
       });
@@ -264,24 +264,24 @@ import ReactDOM from 'react-dom/client';
 import PageSidebar from './PageSidebar';
 import FloatingBubble from './FloatingBubble';
 
-const ROOT_ID = 'eziterms-sidebar-root';
-const SHADOW_HOST_ID = 'eziterms-shadow-host';
-const BUBBLE_HOST_ID = 'eziterms-bubble-host';
+const ROOT_ID = 'distil-sidebar-root';
+const SHADOW_HOST_ID = 'distil-shadow-host';
+const BUBBLE_HOST_ID = 'distil-bubble-host';
 
 function injectBubbleOnly(target: HTMLElement): void {
   if (document.getElementById(BUBBLE_HOST_ID)) return;
-  if (!document.getElementById('eziterms-bubble-styles')) {
+  if (!document.getElementById('distil-bubble-styles')) {
     const bubbleStyle = document.createElement('style');
-    bubbleStyle.id = 'eziterms-bubble-styles';
+    bubbleStyle.id = 'distil-bubble-styles';
     bubbleStyle.textContent = `
-      @keyframes eziterms-bubble-pop { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.85; } 100% { transform: scale(0.15); opacity: 0; } }
-      @keyframes eziterms-bubble-appear { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
+      @keyframes distil-bubble-pop { 0% { transform: scale(1); opacity: 1; } 50% { transform: scale(1.12); opacity: 0.85; } 100% { transform: scale(0.15); opacity: 0; } }
+      @keyframes distil-bubble-appear { 0% { transform: scale(0.4); opacity: 0; } 60% { transform: scale(1.06); opacity: 1; } 100% { transform: scale(1); opacity: 1; } }
     `;
     (document.head || document.documentElement).appendChild(bubbleStyle);
   }
   const bubbleHost = document.createElement('div');
   bubbleHost.id = BUBBLE_HOST_ID;
-  bubbleHost.setAttribute('data-eziterms', 'bubble');
+  bubbleHost.setAttribute('data-distil', 'bubble');
   bubbleHost.style.cssText = 'position:fixed;top:0;left:0;right:0;bottom:0;z-index:2147483647;pointer-events:none;';
   target.appendChild(bubbleHost);
   ReactDOM.createRoot(bubbleHost).render(
@@ -303,7 +303,7 @@ function injectSidebar(): void {
 
   const host = document.createElement('div');
   host.id = SHADOW_HOST_ID;
-  host.setAttribute('data-eziterms', 'host');
+  host.setAttribute('data-distil', 'host');
   host.style.cssText =
     'position:fixed;inset:0;width:100%;height:100%;z-index:2147483646;pointer-events:none;';
   target.appendChild(host);
@@ -326,11 +326,11 @@ function injectSidebar(): void {
       0%, 80%, 100% { transform: scale(0); }
       40% { transform: scale(1); }
     }
-    @keyframes eziterms-tc-fade {
+    @keyframes distil-tc-fade {
       from { opacity: 0; transform: translateY(-8px); }
       to { opacity: 1; transform: translateY(0); }
     }
-    @keyframes eziterms-tc-cloud-in {
+    @keyframes distil-tc-cloud-in {
       from { opacity: 0; transform: translateX(12px) scale(0.92); }
       to { opacity: 1; transform: translateX(0) scale(1); }
     }
@@ -348,7 +348,7 @@ function injectSidebar(): void {
     </React.StrictMode>
   );
   } catch (e) {
-    console.warn('[EziTerms] injectSidebar failed:', e);
+    console.warn('[Distil] injectSidebar failed:', e);
   }
 }
 
@@ -363,7 +363,7 @@ function ensureInjected(): void {
     }
     injectSidebar();
   } catch (e) {
-    console.warn('[EziTerms] Content script inject failed:', e);
+    console.warn('[Distil] Content script inject failed:', e);
   }
 }
 
@@ -388,7 +388,7 @@ try {
     observer.observe(observeTarget, { childList: true, subtree: true });
   }
 } catch (e) {
-  console.warn('[EziTerms] MutationObserver setup failed:', e);
+  console.warn('[Distil] MutationObserver setup failed:', e);
 }
 
 // Retry injection after a short delay (for SPAs that replace body after load)

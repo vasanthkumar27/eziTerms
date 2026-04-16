@@ -35,7 +35,7 @@ If you ever need a new key/ID (e.g. new project), run `node scripts/generate-ext
 
 ## 4. Website sign-in (two options)
 
-### Option A: With EziTerms extension installed
+### Option A: With Distil extension installed
 
 The website sends a message to the extension, which runs `launchWebAuthFlow` and returns the token.
 

@@ -1,6 +1,6 @@
-# EziTerms Chrome Extension
+# Distil Chrome Extension
 
-React + TypeScript + Vite. The extension talks to the EziTerms backend API; you can point it at your local backend or production.
+React + TypeScript + Vite. The extension talks to the Distil backend API; you can point it at your local backend or production.
 
 ## Local vs production (API URL)
 

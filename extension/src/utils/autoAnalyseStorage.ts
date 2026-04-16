@@ -5,7 +5,7 @@
 
 import { getExtensionApi, isInvalidatedError } from './extensionContext';
 
-const STORAGE_KEY = 'eziterms_auto_analyse_enabled';
+const STORAGE_KEY = 'distil_auto_analyse_enabled';
 export const DEFAULT_AUTO_ANALYSE_ENABLED = true;
 
 export async function getAutoAnalyseEnabled(): Promise<boolean> {

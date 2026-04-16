@@ -1,5 +1,5 @@
 /* ==========================================================================
-   EziTerms Extension - Global base, animations, shared button/input states.
+   Distil Extension - Global base, animations, shared button/input states.
    Matches website: pure black, monochrome, blue accent, translucent glass.
    ========================================================================== */
 
@@ -45,7 +45,7 @@
   50% { opacity: 0.5; }
 }
 
-@keyframes eziterms-session-shimmer {
+@keyframes distil-session-shimmer {
   0% { background-position: 140% 0; }
   100% { background-position: -60% 0; }
 }
@@ -60,12 +60,12 @@
   40% { transform: scale(1); opacity: 1; }
 }
 
-@keyframes eziterms-tc-fade {
+@keyframes distil-tc-fade {
   from { opacity: 0; transform: translateY(6px); }
   to { opacity: 1; transform: translateY(0); }
 }
 
-@keyframes eziterms-3d-cube-rotate {
+@keyframes distil-3d-cube-rotate {
   0% { transform: rotateX(-24deg) rotateY(0deg); }
   25% { transform: rotateX(-24deg) rotateY(90deg); }
   50% { transform: rotateX(-24deg) rotateY(180deg); }
@@ -73,68 +73,68 @@
   100% { transform: rotateX(-24deg) rotateY(360deg); }
 }
 
-@keyframes eziterms-3d-orbit-outer {
+@keyframes distil-3d-orbit-outer {
   0% { transform: rotateX(70deg) rotateZ(0deg); }
   100% { transform: rotateX(70deg) rotateZ(360deg); }
 }
 
-@keyframes eziterms-3d-orbit-mid {
+@keyframes distil-3d-orbit-mid {
   0% { transform: rotateX(70deg) rotateY(60deg) rotateZ(0deg); }
   100% { transform: rotateX(70deg) rotateY(60deg) rotateZ(360deg); }
 }
 
-@keyframes eziterms-3d-orbit-inner {
+@keyframes distil-3d-orbit-inner {
   0% { transform: rotateX(70deg) rotateY(120deg) rotateZ(0deg); }
   100% { transform: rotateX(70deg) rotateY(120deg) rotateZ(360deg); }
 }
 
-@keyframes eziterms-3d-pulse {
+@keyframes distil-3d-pulse {
   0%, 100% { opacity: 0.6; transform: scale(1); filter: blur(0); }
   50% { opacity: 1; transform: scale(1.08); filter: blur(2px); }
 }
 
-@keyframes eziterms-mask-ring {
+@keyframes distil-mask-ring {
   0% { transform: rotate(0deg) scale(0.98); opacity: 0.5; }
   100% { transform: rotate(360deg) scale(1.04); opacity: 1; }
 }
 
-@keyframes eziterms-mask-pulse {
+@keyframes distil-mask-pulse {
   0%, 100% { transform: scale(0.9); opacity: 0.72; }
   50% { transform: scale(1.08); opacity: 1; }
 }
 
-@keyframes eziterms-mask-sparkle {
+@keyframes distil-mask-sparkle {
   0%, 100% { transform: scale(0.7); opacity: 0.4; }
   50% { transform: scale(1.1); opacity: 1; }
 }
 
-@keyframes eziterms-mask-text-fade {
+@keyframes distil-mask-text-fade {
   0%, 35% { opacity: 1; filter: blur(0); }
   60%, 100% { opacity: 0.08; filter: blur(1px); }
 }
 
-@keyframes eziterms-mask-block-rise {
+@keyframes distil-mask-block-rise {
   0%, 30% { opacity: 0; transform: translateY(2px) scale(0.96); }
   58%, 100% { opacity: 0.95; transform: translateY(0) scale(1); }
 }
 
-@keyframes eziterms-mask-depth-drift {
+@keyframes distil-mask-depth-drift {
   0% { transform: translateZ(-60px) translateY(8px) scale(0.9); opacity: 0.58; }
   45% { transform: translateZ(10px) translateY(0) scale(1.02); opacity: 1; }
   100% { transform: translateZ(26px) translateY(-2px) scale(1.06); opacity: 0.9; }
 }
 
-@keyframes eziterms-mask-progress-sweep {
+@keyframes distil-mask-progress-sweep {
   0% { transform: translateX(-104%); }
   100% { transform: translateX(104%); }
 }
 
-.eziterms-mask-viewport {
+.distil-mask-viewport {
   perspective: 760px;
   perspective-origin: center center;
 }
 
-.eziterms-mask-stream {
+.distil-mask-stream {
   display: flex;
   flex-direction: column;
   gap: 7px;
@@ -143,21 +143,21 @@
   min-height: 112px;
 }
 
-.eziterms-mask-line {
+.distil-mask-line {
   display: flex;
   flex-wrap: wrap;
   gap: 6px;
   transform-style: preserve-3d;
-  animation: eziterms-mask-depth-drift 1.8s ease-in-out infinite;
+  animation: distil-mask-depth-drift 1.8s ease-in-out infinite;
   justify-content: center;
 }
 
-.eziterms-mask-line:nth-child(2) { animation-delay: 0.22s; transform: translateX(-10px); }
-.eziterms-mask-line:nth-child(3) { animation-delay: 0.42s; transform: translateX(8px); }
-.eziterms-mask-line:nth-child(4) { animation-delay: 0.58s; transform: translateX(-4px); }
-.eziterms-mask-line:nth-child(5) { animation-delay: 0.72s; transform: translateX(12px); }
+.distil-mask-line:nth-child(2) { animation-delay: 0.22s; transform: translateX(-10px); }
+.distil-mask-line:nth-child(3) { animation-delay: 0.42s; transform: translateX(8px); }
+.distil-mask-line:nth-child(4) { animation-delay: 0.58s; transform: translateX(-4px); }
+.distil-mask-line:nth-child(5) { animation-delay: 0.72s; transform: translateX(12px); }
 
-.eziterms-mask-token {
+.distil-mask-token {
   position: relative;
   display: inline-flex;
   align-items: center;
@@ -169,25 +169,25 @@
   transform-style: preserve-3d;
 }
 
-.eziterms-mask-line:nth-child(odd) .eziterms-mask-token:nth-child(3n) { transform: translateY(-1px); }
-.eziterms-mask-line:nth-child(even) .eziterms-mask-token:nth-child(4n) { transform: translateY(1px); }
+.distil-mask-line:nth-child(odd) .distil-mask-token:nth-child(3n) { transform: translateY(-1px); }
+.distil-mask-line:nth-child(even) .distil-mask-token:nth-child(4n) { transform: translateY(1px); }
 
-.eziterms-mask-token-text {
-  animation: eziterms-mask-text-fade 1.55s ease-in-out infinite;
+.distil-mask-token-text {
+  animation: distil-mask-text-fade 1.55s ease-in-out infinite;
   animation-delay: var(--ez-mask-delay, 0s);
 }
 
-.eziterms-mask-token-block {
+.distil-mask-token-block {
   position: absolute;
   inset: 0 auto auto 0;
   color: rgba(50, 145, 255, 0.85);
   letter-spacing: 0.04em;
-  animation: eziterms-mask-block-rise 1.55s ease-in-out infinite;
+  animation: distil-mask-block-rise 1.55s ease-in-out infinite;
   animation-delay: var(--ez-mask-delay, 0s);
   text-shadow: 0 0 10px rgba(50, 145, 255, 0.3);
 }
 
-.eziterms-mask-progress {
+.distil-mask-progress {
   position: relative;
   overflow: hidden;
   height: 4px;
@@ -195,11 +195,11 @@
   background: rgba(255, 255, 255, 0.06);
 }
 
-.eziterms-mask-progress > span {
+.distil-mask-progress > span {
   position: absolute;
   inset: 0;
   background: linear-gradient(90deg, rgba(50, 145, 255, 0.1), rgba(50, 145, 255, 0.8), rgba(255, 255, 255, 0.9), rgba(50, 145, 255, 0.1));
-  animation: eziterms-mask-progress-sweep 1.25s linear infinite;
+  animation: distil-mask-progress-sweep 1.25s linear infinite;
 }
 
 /* ---- Button base ---- */
@@ -207,32 +207,32 @@ button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-button[data-eziterms-btn="primary"]:hover:not(:disabled) {
+button[data-distil-btn="primary"]:hover:not(:disabled) {
   filter: brightness(0.92);
   box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
   transition: filter 0.15s ease, box-shadow 0.15s ease;
 }
-button[data-eziterms-btn="primary"]:focus-visible {
+button[data-distil-btn="primary"]:focus-visible {
   outline: 2px solid rgba(50, 145, 255, 0.6);
   outline-offset: 2px;
 }
 
-button[data-eziterms-btn="secondary"]:hover:not(:disabled) {
+button[data-distil-btn="secondary"]:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.07) !important;
   border-color: rgba(255, 255, 255, 0.12) !important;
   transition: background 0.15s ease, border-color 0.15s ease;
 }
-button[data-eziterms-btn="secondary"]:focus-visible {
+button[data-distil-btn="secondary"]:focus-visible {
   outline: 2px solid rgba(50, 145, 255, 0.5);
   outline-offset: 2px;
 }
 
-button[data-eziterms-btn="icon"]:hover:not(:disabled) {
+button[data-distil-btn="icon"]:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.08) !important;
   color: #ededed !important;
   transition: background 0.15s ease, color 0.15s ease;
 }
-button[data-eziterms-btn="icon"]:focus-visible {
+button[data-distil-btn="icon"]:focus-visible {
   outline: 2px solid rgba(50, 145, 255, 0.5);
   outline-offset: 2px;
 }

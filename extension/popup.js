@@ -2,9 +2,9 @@
  * Extension icon popup - toggle on/off and open side panel.
  */
 (function () {
-  const STORAGE_KEY = 'eziterms_extension_enabled';
-  const LOGO_DARK = 'assets/eziterms-Logo-icon-dark-theme.png';
-  const LOGO_LIGHT = 'assets/eziterms-Logo-icon-light-theme.png';
+  const STORAGE_KEY = 'distil_extension_enabled';
+  const LOGO_DARK = 'assets/distil-Logo-icon-dark-theme.png';
+  const LOGO_LIGHT = 'assets/distil-Logo-icon-light-theme.png';
 
   function setLogoByTheme() {
     const mq = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)');
@@ -12,7 +12,7 @@
     const img = document.getElementById('logo-img');
     if (img) img.src = isDark ? LOGO_DARK : LOGO_LIGHT;
     if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ type: 'EZITERMS_SET_THEME_ICON', isDark }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'DISTIL_SET_THEME_ICON', isDark }).catch(() => {});
     }
   }
   setLogoByTheme();

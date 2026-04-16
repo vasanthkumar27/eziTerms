@@ -84,8 +84,8 @@ const FloatingBubble: React.FC = () => {
       namespace: string
     ) => {
       try {
-        if (namespace === 'local' && changes.eziterms_extension_enabled) {
-          const v = changes.eziterms_extension_enabled.newValue;
+        if (namespace === 'local' && changes.distil_extension_enabled) {
+          const v = changes.distil_extension_enabled.newValue;
           if (v === false) {
             setIsExiting(true);
             setTimeout(() => {
@@ -177,7 +177,7 @@ const FloatingBubble: React.FC = () => {
       <div
         role="button"
         tabIndex={0}
-        aria-label="Open EziTerms"
+        aria-label="Open Distil"
         onClick={handleClick}
         onMouseDown={handleMouseDown}
         style={{
@@ -198,15 +198,15 @@ const FloatingBubble: React.FC = () => {
           transition: isDragging ? 'border-radius 0.25s ease, width 0.25s ease, height 0.25s ease' : 'all 0.35s cubic-bezier(0.4, 0, 0.2, 1)',
           opacity: isExiting ? 0 : 1,
           visibility: 'visible',
-          animation: isExiting ? 'eziterms-bubble-pop 0.3s ease-out forwards' : (isAppearing ? 'eziterms-bubble-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined),
+          animation: isExiting ? 'distil-bubble-pop 0.3s ease-out forwards' : (isAppearing ? 'distil-bubble-appear 0.4s cubic-bezier(0.34, 1.56, 0.64, 1)' : undefined),
         }}
         onKeyDown={(e) => (e.key === 'Enter' || e.key === ' ') && (e.preventDefault(), handleClick(e as unknown as React.MouseEvent))}
       >
         <img
           src={
-            getExtensionApi()?.runtime?.getURL?.('assets/eziterms-Logo-icon-dark-theme.png') ??
+            getExtensionApi()?.runtime?.getURL?.('assets/distil-Logo-icon-dark-theme.png') ??
             (typeof chrome !== 'undefined' && chrome.runtime?.getURL
-              ? chrome.runtime.getURL('assets/eziterms-Logo-icon-dark-theme.png')
+              ? chrome.runtime.getURL('assets/distil-Logo-icon-dark-theme.png')
               : '')
           }
           alt=""

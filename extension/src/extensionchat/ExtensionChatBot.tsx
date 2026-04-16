@@ -125,7 +125,7 @@ const ExtensionChatBot: React.FC<ExtensionChatBotProps> = ({ termsText, messages
             <button
               key={s}
               type="button"
-              data-eziterms-btn="secondary"
+              data-distil-btn="secondary"
               style={suggestionChip}
               onClick={() => setInput(s)}
               disabled={loading || !termsText}
@@ -165,7 +165,7 @@ const ExtensionChatBot: React.FC<ExtensionChatBotProps> = ({ termsText, messages
         />
         <button
           type="button"
-          data-eziterms-btn="primary"
+          data-distil-btn="primary"
           onClick={sendMessage}
           disabled={loading || !input.trim() || !termsText}
           style={sendButton}

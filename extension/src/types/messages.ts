@@ -44,8 +44,8 @@ export function getRiskScoreColor(score: number): { bg: string; border: string; 
 }
 
 /** Message sent from popup/side-panel or background to content script when analysis completes */
-export type EziTermsAnalysisResultMessage = {
-  type: 'EZITERMS_ANALYSIS_RESULT';
+export type DistilAnalysisResultMessage = {
+  type: 'DISTIL_ANALYSIS_RESULT';
   payload: {
     pageUrl: string;
     analysisResult: RiskEntry[];
@@ -54,49 +54,49 @@ export type EziTermsAnalysisResultMessage = {
 };
 
 /** Message sent from popup/side-panel to request opening the in-page sidebar (optional) */
-export type EziTermsOpenSidebarMessage = {
-  type: 'EZITERMS_OPEN_SIDEBAR';
+export type DistilOpenSidebarMessage = {
+  type: 'DISTIL_OPEN_SIDEBAR';
 };
 
 /** Message sent from side panel to content script: show T&C detected bubble on the page (so user sees it without opening the panel). */
-export type EziTermsShowTcBubbleMessage = {
-  type: 'EZITERMS_SHOW_TC_BUBBLE';
+export type DistilShowTcBubbleMessage = {
+  type: 'DISTIL_SHOW_TC_BUBBLE';
   payload: { text: string; url: string; probability?: number };
 };
 
-export const EZITERMS_OPEN_AND_ANALYZE = 'EZITERMS_OPEN_AND_ANALYZE';
-export const EZITERMS_READ_PENDING_ANALYZE = 'EZITERMS_READ_PENDING_ANALYZE';
+export const DISTIL_OPEN_AND_ANALYZE = 'DISTIL_OPEN_AND_ANALYZE';
+export const DISTIL_READ_PENDING_ANALYZE = 'DISTIL_READ_PENDING_ANALYZE';
 
-export type EziTermsContentMessage =
-  | EziTermsAnalysisResultMessage
-  | EziTermsOpenSidebarMessage
-  | EziTermsShowTcBubbleMessage;
+export type DistilContentMessage =
+  | DistilAnalysisResultMessage
+  | DistilOpenSidebarMessage
+  | DistilShowTcBubbleMessage;
 
-export function isEziTermsAnalysisResult(
+export function isDistilAnalysisResult(
   msg: unknown
-): msg is EziTermsAnalysisResultMessage {
+): msg is DistilAnalysisResultMessage {
   return (
     typeof msg === 'object' &&
     msg !== null &&
-    (msg as EziTermsAnalysisResultMessage).type === 'EZITERMS_ANALYSIS_RESULT'
+    (msg as DistilAnalysisResultMessage).type === 'DISTIL_ANALYSIS_RESULT'
   );
 }
 
-export function isEziTermsOpenSidebar(msg: unknown): msg is EziTermsOpenSidebarMessage {
+export function isDistilOpenSidebar(msg: unknown): msg is DistilOpenSidebarMessage {
   return (
     typeof msg === 'object' &&
     msg !== null &&
-    (msg as EziTermsOpenSidebarMessage).type === 'EZITERMS_OPEN_SIDEBAR'
+    (msg as DistilOpenSidebarMessage).type === 'DISTIL_OPEN_SIDEBAR'
   );
 }
 
-export function isEziTermsShowTcBubble(msg: unknown): msg is EziTermsShowTcBubbleMessage {
+export function isDistilShowTcBubble(msg: unknown): msg is DistilShowTcBubbleMessage {
   return (
     typeof msg === 'object' &&
     msg !== null &&
-    (msg as EziTermsShowTcBubbleMessage).type === 'EZITERMS_SHOW_TC_BUBBLE' &&
-    typeof (msg as EziTermsShowTcBubbleMessage).payload === 'object' &&
-    typeof (msg as EziTermsShowTcBubbleMessage).payload?.text === 'string' &&
-    typeof (msg as EziTermsShowTcBubbleMessage).payload?.url === 'string'
+    (msg as DistilShowTcBubbleMessage).type === 'DISTIL_SHOW_TC_BUBBLE' &&
+    typeof (msg as DistilShowTcBubbleMessage).payload === 'object' &&
+    typeof (msg as DistilShowTcBubbleMessage).payload?.text === 'string' &&
+    typeof (msg as DistilShowTcBubbleMessage).payload?.url === 'string'
   );
 }

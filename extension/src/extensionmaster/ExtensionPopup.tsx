@@ -10,15 +10,15 @@ import {
   saveScanTabsToBackend,
   clearEntitlementCache,
 } from '../api/sessionApi';
-import { EZITERMS_READ_PENDING_ANALYZE } from '../types/messages';
+import { DISTIL_READ_PENDING_ANALYZE } from '../types/messages';
 import { fusion } from '../theme/fusionTheme';
 import logoutIcon from '../assets/logout-button.png';
-import ezitermsIconDark from '../assets/Eziterms-Logo-icon-dark theme.png';
+import distilIconDark from '../assets/Distil-Logo-icon-dark theme.png';
 
 const WEBSITE_ORIGINS = [
   'https://haptix.in',
   'https://www.haptix.in',
-  'https://eziterms.haptix.in',
+  'https://distil.haptix.in',
   'https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com',
   'http://localhost:5173',
   'http://localhost:3000',
@@ -57,7 +57,7 @@ async function tryRecoverTokensFromWebsite(): Promise<boolean> {
           if (data.refresh_token) items.refresh_token = data.refresh_token;
           if (data.session_id) items.session_id = data.session_id;
           await chrome.storage.local.set(items);
-          await chrome.storage.local.remove(['eziterms_logged_out']);
+          await chrome.storage.local.remove(['distil_logged_out']);
           return true;
         }
       } catch {
@@ -80,7 +80,7 @@ function notifyContentScriptOfAnalysis(
     const tabId = tabs[0]?.id;
     if (tabId != null && analysisResult != null && Array.isArray(analysisResult)) {
       chrome.tabs.sendMessage(tabId, {
-        type: 'EZITERMS_ANALYSIS_RESULT',
+        type: 'DISTIL_ANALYSIS_RESULT',
         payload: { pageUrl: url, analysisResult, termsText },
       }).catch(() => {});
     }
@@ -107,7 +107,7 @@ const ExtensionPopup: React.FC = () => {
 
   useEffect(() => {
     if (typeof chrome !== 'undefined' && chrome.runtime?.sendMessage) {
-      chrome.runtime.sendMessage({ type: 'EZITERMS_SET_THEME_ICON', isDark: isDarkMode }).catch(() => {});
+      chrome.runtime.sendMessage({ type: 'DISTIL_SET_THEME_ICON', isDark: isDarkMode }).catch(() => {});
     }
   }, [isDarkMode]);
 
@@ -139,11 +139,11 @@ const ExtensionPopup: React.FC = () => {
 
   const readPendingAnalyze = React.useCallback(() => {
     if (typeof chrome === 'undefined' || !chrome.storage?.session) return;
-    chrome.storage.session.get(['eziterms_pending_analyze'], (result) => {
-      const pending = result?.eziterms_pending_analyze;
+    chrome.storage.session.get(['distil_pending_analyze'], (result) => {
+      const pending = result?.distil_pending_analyze;
       if (pending && typeof pending.text === 'string' && typeof pending.url === 'string') {
         setPendingScanRequest({ text: pending.text, url: pending.url });
-        chrome.storage.session.remove(['eziterms_pending_analyze']);
+        chrome.storage.session.remove(['distil_pending_analyze']);
       }
     });
   }, []);
@@ -154,7 +154,7 @@ const ExtensionPopup: React.FC = () => {
 
   useEffect(() => {
     const listener = (message: { type?: string }) => {
-      if (message.type === EZITERMS_READ_PENDING_ANALYZE) readPendingAnalyze();
+      if (message.type === DISTIL_READ_PENDING_ANALYZE) readPendingAnalyze();
     };
     if (typeof chrome !== 'undefined' && chrome.runtime?.onMessage) {
       chrome.runtime.onMessage.addListener(listener);
@@ -209,9 +209,9 @@ const ExtensionPopup: React.FC = () => {
     clearEntitlementCache();
     await clearTokens();
     if (typeof chrome !== 'undefined' && chrome.storage) {
-      await chrome.storage.local.remove(['eziterms_scan_tabs']);
+      await chrome.storage.local.remove(['distil_scan_tabs']);
       if (chrome.storage.session) {
-        await chrome.storage.session.remove(['eziterms_scan_tabs', 'eziterms_pending_analyze']);
+        await chrome.storage.session.remove(['distil_scan_tabs', 'distil_pending_analyze']);
       }
     }
     setIsAuthenticated(false);
@@ -234,15 +234,15 @@ const ExtensionPopup: React.FC = () => {
     <div style={popupWrapperStyle}>
       <header style={popupHeaderStyle}>
         <div style={{ ...popupTitleWrap, flexDirection: 'row', alignItems: 'center', gap: 8 }}>
-          <img src={ezitermsIconDark} alt="" width={24} height={24} style={{ flexShrink: 0 }} />
+          <img src={distilIconDark} alt="" width={24} height={24} style={{ flexShrink: 0 }} />
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
-            <span style={popupTitle}>EziTerms</span>
+            <span style={popupTitle}>Distil</span>
             <span style={popupSubtitle}>Terms & risk</span>
           </div>
         </div>
         <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
           {isAuthenticated && (
-            <button type="button" data-eziterms-btn="icon" onClick={handleLogoutClick} style={iconButtonStyle} title="Logout">
+            <button type="button" data-distil-btn="icon" onClick={handleLogoutClick} style={iconButtonStyle} title="Logout">
               <img src={logoutIcon} alt="Logout" width={16} height={16} style={{ pointerEvents: 'none' }} />
             </button>
           )}
@@ -290,13 +290,13 @@ const ExtensionPopup: React.FC = () => {
                   Saved analyses will appear in your dashboard.
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 12, flexWrap: 'wrap' }}>
-                  <button type="button" data-eziterms-btn="primary" onClick={handleSaveAndLogout} disabled={isSaving} style={{ ...confirmButtonStyle, background: fusion.successBg, color: fusion.successText, border: `1px solid rgba(34, 197, 94, 0.4)` }}>
+                  <button type="button" data-distil-btn="primary" onClick={handleSaveAndLogout} disabled={isSaving} style={{ ...confirmButtonStyle, background: fusion.successBg, color: fusion.successText, border: `1px solid rgba(34, 197, 94, 0.4)` }}>
                     {isSaving ? 'Saving...' : 'Save & Logout'}
                   </button>
-                  <button type="button" data-eziterms-btn="secondary" onClick={handleDontSaveAndLogout} style={confirmButtonStyle}>
+                  <button type="button" data-distil-btn="secondary" onClick={handleDontSaveAndLogout} style={confirmButtonStyle}>
                     Don't save, Logout
                   </button>
-                  <button type="button" data-eziterms-btn="secondary" onClick={() => setShowLogoutConfirm(false)} style={cancelButtonStyle}>
+                  <button type="button" data-distil-btn="secondary" onClick={() => setShowLogoutConfirm(false)} style={cancelButtonStyle}>
                     Cancel
                   </button>
                 </div>
@@ -307,10 +307,10 @@ const ExtensionPopup: React.FC = () => {
                   Are you sure you want to logout?
                 </p>
                 <div style={{ display: 'flex', justifyContent: 'center', gap: 16 }}>
-                  <button type="button" data-eziterms-btn="primary" onClick={handleDontSaveAndLogout} style={confirmButtonStyle}>
+                  <button type="button" data-distil-btn="primary" onClick={handleDontSaveAndLogout} style={confirmButtonStyle}>
                     Logout
                   </button>
-                  <button type="button" data-eziterms-btn="secondary" onClick={() => setShowLogoutConfirm(false)} style={cancelButtonStyle}>
+                  <button type="button" data-distil-btn="secondary" onClick={() => setShowLogoutConfirm(false)} style={cancelButtonStyle}>
                     Cancel
                   </button>
                 </div>
@@ -432,7 +432,7 @@ const skeletonPulseBar: React.CSSProperties = {
   borderRadius: 8,
   background: 'linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.16), rgba(255,255,255,0.08))',
   backgroundSize: '200% 100%',
-  animation: 'eziterms-session-shimmer 1.15s linear infinite',
+  animation: 'distil-session-shimmer 1.15s linear infinite',
 };
 
 const skeletonPulseLine: React.CSSProperties = {
@@ -441,7 +441,7 @@ const skeletonPulseLine: React.CSSProperties = {
   borderRadius: 6,
   background: 'linear-gradient(90deg, rgba(255,255,255,0.08), rgba(255,255,255,0.14), rgba(255,255,255,0.08))',
   backgroundSize: '200% 100%',
-  animation: 'eziterms-session-shimmer 1.15s linear infinite',
+  animation: 'distil-session-shimmer 1.15s linear infinite',
 };
 
 const skeletonButtonsWrap: React.CSSProperties = {
@@ -456,7 +456,7 @@ const skeletonButton: React.CSSProperties = {
   borderRadius: 10,
   background: 'linear-gradient(90deg, rgba(255,255,255,0.06), rgba(255,255,255,0.12), rgba(255,255,255,0.06))',
   backgroundSize: '200% 100%',
-  animation: 'eziterms-session-shimmer 1.15s linear infinite',
+  animation: 'distil-session-shimmer 1.15s linear infinite',
 };
 
 const authCheckingText: React.CSSProperties = {

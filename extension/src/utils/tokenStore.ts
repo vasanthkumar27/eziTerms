@@ -1,5 +1,5 @@
 /**
- * Token storage abstraction for EziTerms extension.
+ * Token storage abstraction for Distil extension.
  * Uses chrome.storage.local as the single source. Content script syncs to page localStorage
  * when on localhost:5173 so website and extension share one session.
  */
@@ -73,7 +73,7 @@ export async function setTokens(access: string, refresh: string, sessionId?: str
   }
 }
 
-const LOGGED_OUT_FLAG = 'eziterms_logged_out';
+const LOGGED_OUT_FLAG = 'distil_logged_out';
 
 export async function clearTokens(): Promise<void> {
   try {

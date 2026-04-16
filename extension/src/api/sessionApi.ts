@@ -28,7 +28,7 @@ export async function saveDocumentAnalysis(
   return null;
 }
 
-const STORAGE_KEY = 'eziterms_scan_tabs';
+const STORAGE_KEY = 'distil_scan_tabs';
 
 type ScanTab = {
   id: string;

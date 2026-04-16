@@ -16,9 +16,9 @@ import {
 import type { RiskEntry } from '../types/messages';
 import { deleteDocumentAnalysis, fetchDocumentAnalyses } from '../api/sessionApi';
 import { fusion } from '../theme/fusionTheme';
-import { isEziTermsAnalysisResult } from '../types/messages';
+import { isDistilAnalysisResult } from '../types/messages';
 
-const STORAGE_KEY = 'eziterms_scan_tabs';
+const STORAGE_KEY = 'distil_scan_tabs';
 const buildChatContextFromResults = (items: RiskEntry[] | null): string | null => {
   if (!items || !items.length) return null;
   const lines = items.slice(0, 20).map((x, i) => {
@@ -201,7 +201,7 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
 
   useEffect(() => {
     const handler = (message: unknown) => {
-      if (isEziTermsAnalysisResult(message)) {
+      if (isDistilAnalysisResult(message)) {
         const { pageUrl, analysisResult, termsText } = message.payload;
         addOrUpdateTab(pageUrl, { termsText, analysisResult });
       }
@@ -258,7 +258,7 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
               </button>
               <button
                 type="button"
-                data-eziterms-btn="icon"
+                data-distil-btn="icon"
                 onClick={() => removeTab(t.id)}
                 style={{
                   background: 'transparent',

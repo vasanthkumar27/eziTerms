@@ -4,11 +4,11 @@ Classification runs **locally in the browser** using this JSON model, so every p
 
 ## Generate the model file
 
-From the **backend** project (`EziTerms-BE-API`), after training the classifier:
+From the **backend** project (`Distil-BE-API`), after training the classifier:
 
 ```bash
-cd EziTerms-BE-API
-python -m scripts.export_tc_classifier_json --out ../EziTerms-UI-EXTENSION/public/models/tc_page_classifier.json
+cd Distil-BE-API
+python -m scripts.export_tc_classifier_json --out ../Distil-UI-EXTENSION/public/models/tc_page_classifier.json
 ```
 
 Or export to the default path and copy:
