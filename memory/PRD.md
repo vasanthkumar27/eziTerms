@@ -62,3 +62,21 @@ Original `services/bedrock_llm.py` was AWS-only, so the app was non-functional w
 1. User to rebuild the extension locally (`cd extension && yarn build:local`) or unzip the generated `extension/dist.zip`, then reload as unpacked extension in Chrome.
 2. Run `cd backend && uvicorn main:app --port 8000` locally (or keep Bedrock creds configured).
 3. Verify scan flow: open any T&C page → click extension icon → click "Scan page" → results should now render reliably.
+
+## Update — Remote preview API support for the extension (2026-04-16)
+Added a `yarn build:preview` build mode so the extension can call the Emergent-hosted preview backend instead of a local machine. No need to run anything locally — just load the built extension and sign in.
+
+Changes:
+- `extension/vite.config.ts` + `src/masterconstans/MasterConstants.tsx`: new `VITE_API_BASE_URL` override that takes priority over `VITE_USE_AWS`. Same logic in both so the bundle and the build-time `__API_BASE_URL__` constant stay in sync.
+- `extension/package.json`: new `build:preview` script that sets `VITE_API_BASE_URL` and `VITE_WEBSITE_BASE_URL` to the preview URL, then runs both the main and content-script Vite builds.
+- `extension/public/manifest.json`: added `https://*.preview.emergentagent.com/*`, `http://localhost:8001/*`, and `http://localhost:3000/*` to `host_permissions` so Chrome allows fetches to these origins.
+- `extension/src/extensionmaster/ExtensionPopup.tsx`: preview URL added to `WEBSITE_ORIGINS` so the token-recovery flow from open web-app tabs works.
+- `scripts/test_extension_against_preview.py`: smoke test that hits the public preview API end-to-end — signup → login → classify → analyze → upload → masking → chatbot → refresh → logout. All 10 pass.
+
+### Build modes summary
+| Command | Base API URL | When to use |
+|---|---|---|
+| `yarn build:local` | `http://localhost:8000/api` | Developing locally, backend running on your machine. |
+| `yarn build:preview` | `https://2a64ea27-…emergentagent.com/api` | Using the Emergent-hosted preview. No local backend required. |
+| `yarn build:prod` | `https://api.haptix.in/api` | Shipping the production build. |
+| `VITE_API_BASE_URL=... yarn build` | anywhere | Pointing at a custom endpoint. |

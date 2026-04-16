@@ -5,7 +5,8 @@
     "dev": "vite",
     "build": "vite build && vite build --config vite.config.content.ts",
     "build:local": "cross-env VITE_USE_AWS=false vite build && vite build --config vite.config.content.ts",
-    "build:prod": "cross-env VITE_USE_AWS=true vite build && vite build --config vite.config.content.ts"
+    "build:prod": "cross-env VITE_USE_AWS=true vite build && vite build --config vite.config.content.ts",
+    "build:preview": "cross-env VITE_API_BASE_URL=https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com/api VITE_WEBSITE_BASE_URL=https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com vite build && cross-env VITE_API_BASE_URL=https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com/api vite build --config vite.config.content.ts"
   },
   "dependencies": {
     "@babel/core": "^7.27.3",

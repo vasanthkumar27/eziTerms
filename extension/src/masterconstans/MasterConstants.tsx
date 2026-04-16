@@ -1,7 +1,13 @@
+// Priority: explicit VITE_API_BASE_URL override > VITE_USE_AWS toggle.
+const envOverride = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL)
+  ? String(import.meta.env.VITE_API_BASE_URL).trim().replace(/\/+$/, '')
+  : '';
 const useAws = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_USE_AWS)
   ? ['true', '1', 'yes'].includes(String(import.meta.env.VITE_USE_AWS).toLowerCase())
   : false;
-const bootstrapUrl = useAws ? 'https://api.haptix.in/api' : 'http://localhost:8000/api';
+const bootstrapUrl = envOverride
+  || (useAws ? 'https://api.haptix.in/api' : 'http://localhost:8000/api');
+
 const envWebsite = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_WEBSITE_BASE_URL)
   ? String(import.meta.env.VITE_WEBSITE_BASE_URL).trim().replace(/\/$/, '')
   : '';

@@ -5,8 +5,17 @@ import { viteStaticCopy } from 'vite-plugin-static-copy';
 export default defineConfig(({ mode }) => {
   // Load .env from extension project root so VITE_* vars are available at build time
   loadEnv(mode, process.cwd(), '');
+
+  // Priority:
+  //   1. VITE_API_BASE_URL   — explicit override (full URL, including /api)
+  //   2. VITE_USE_AWS=true   — production  (https://api.haptix.in/api)
+  //   3. VITE_USE_AWS=false  — local dev   (http://localhost:8000/api)
+  const override = (process.env.VITE_API_BASE_URL || '').trim();
   const useAws = ['true', '1', 'yes'].includes(String(process.env.VITE_USE_AWS ?? 'true').toLowerCase());
-  const apiBaseUrl = useAws ? 'https://api.haptix.in/api' : 'http://localhost:8000/api';
+  const apiBaseUrl = override
+    ? override.replace(/\/+$/, '')
+    : (useAws ? 'https://api.haptix.in/api' : 'http://localhost:8000/api');
+
   return {
   define: {
     __API_BASE_URL__: JSON.stringify(apiBaseUrl),

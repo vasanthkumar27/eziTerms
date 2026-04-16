@@ -19,6 +19,7 @@ const WEBSITE_ORIGINS = [
   'https://haptix.in',
   'https://www.haptix.in',
   'https://eziterms.haptix.in',
+  'https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
