@@ -1,4 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { apiPost, apiUpload, isLoggedIn, logout as apiLogout } from './api';
 import LoginModal from './LoginModal';
 import RiskCard from './RiskCard';
@@ -78,12 +80,16 @@ export default function App() {
     setLoading(true);
     try {
       const data = source === 'url'
-        ? await apiPost('/api/analyze-terms', { terms: text, document_url: text })
+        ? await apiPost('/api/analyze-terms', { url: text, crawl: true })
         : await apiPost('/api/analyze-terms', { terms: text });
       const score = data.risk_score ?? riskScore(data.result);
       setLastAnalysis(data.result);
-      setLastTermsText(text);
-      addMsg('bot', null, { analysis: data.result, score });
+      // If the server fetched + concatenated pages, use that text as chat context
+      setLastTermsText(data.terms_text || text);
+      const crawledNote = data.pages && data.pages.length > 1
+        ? `Crawled ${data.pages.length} pages from ${data.source_url}.`
+        : null;
+      addMsg('bot', crawledNote, { analysis: data.result, score });
     } catch (e) {
       addMsg('bot', e?.data?.detail || 'Analysis failed. Try again.');
     } finally { setLoading(false); }
@@ -193,7 +199,16 @@ export default function App() {
               ) : (
                 <div style={{ display: 'flex', justifyContent: 'flex-start' }}>
                   <div style={botBubble}>
-                    {m.content && <div style={{ whiteSpace: 'pre-wrap', lineHeight: 1.6 }}>{m.content}</div>}
+                    {m.content && (
+                      <div style={markdownBody}>
+                        <ReactMarkdown
+                          remarkPlugins={[remarkGfm]}
+                          components={markdownComponents}
+                        >
+                          {m.content}
+                        </ReactMarkdown>
+                      </div>
+                    )}
                     {m.analysis && <RiskCard result={m.analysis} score={m.score} />}
                   </div>
                 </div>
@@ -262,3 +277,23 @@ const chatInput = { flex: 1, background: 'var(--bg-elevated)', border: '1px soli
 const attachBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, border: '1px solid var(--border)', background: 'transparent', color: 'var(--text-secondary)', cursor: 'pointer', flexShrink: 0, transition: 'all var(--transition)' };
 const sendBtn = { display: 'flex', alignItems: 'center', justifyContent: 'center', width: 40, height: 40, borderRadius: 10, border: 'none', background: '#fff', color: '#000', cursor: 'pointer', flexShrink: 0, transition: 'opacity var(--transition)' };
 const spinnerStyle = { display: 'inline-block', width: 14, height: 14, border: '2px solid var(--border)', borderTopColor: 'var(--text-secondary)', borderRadius: '50%', animation: 'spin .6s linear infinite' };
+
+const markdownBody = { lineHeight: 1.6, fontSize: '0.88rem', color: 'var(--text)' };
+
+const markdownComponents = {
+  p: ({ node, ...props }) => <p style={{ margin: '0 0 8px' }} {...props} />,
+  ul: ({ node, ...props }) => <ul style={{ margin: '0 0 8px', paddingLeft: 20 }} {...props} />,
+  ol: ({ node, ...props }) => <ol style={{ margin: '0 0 8px', paddingLeft: 20 }} {...props} />,
+  li: ({ node, ...props }) => <li style={{ marginBottom: 4 }} {...props} />,
+  h1: ({ node, ...props }) => <h3 style={{ margin: '8px 0 6px', fontSize: '1rem', fontWeight: 700 }} {...props} />,
+  h2: ({ node, ...props }) => <h3 style={{ margin: '8px 0 6px', fontSize: '0.95rem', fontWeight: 700 }} {...props} />,
+  h3: ({ node, ...props }) => <h4 style={{ margin: '8px 0 6px', fontSize: '0.9rem', fontWeight: 600 }} {...props} />,
+  strong: ({ node, ...props }) => <strong style={{ color: '#fff', fontWeight: 600 }} {...props} />,
+  em: ({ node, ...props }) => <em style={{ color: 'var(--text)' }} {...props} />,
+  a: ({ node, ...props }) => <a style={{ color: 'var(--blue, #3291ff)', textDecoration: 'underline' }} target="_blank" rel="noopener noreferrer" {...props} />,
+  code: ({ node, inline, ...props }) => inline
+    ? <code style={{ background: 'rgba(255,255,255,0.08)', padding: '1px 5px', borderRadius: 4, fontSize: '0.82em', fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} {...props} />
+    : <pre style={{ background: 'rgba(0,0,0,0.4)', padding: 10, borderRadius: 8, overflow: 'auto', fontSize: '0.8em' }}><code style={{ fontFamily: 'ui-monospace, SFMono-Regular, Menlo, monospace' }} {...props} /></pre>,
+  blockquote: ({ node, ...props }) => <blockquote style={{ borderLeft: '3px solid var(--border)', paddingLeft: 10, margin: '6px 0', color: 'var(--text-secondary)' }} {...props} />,
+  hr: () => <hr style={{ border: 'none', borderTop: '1px solid var(--border)', margin: '10px 0' }} />,
+};

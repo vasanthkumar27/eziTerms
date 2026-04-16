@@ -109,20 +109,35 @@ VITE_API_BASE_URL=https://2a64ea27-…preview.emergentagent.com
 3. CORS preflight `OPTIONS /api/login` with `Origin: http://localhost:3000` → 204 with `access-control-allow-origin: *`. Cross-origin from localhost works without backend changes.
 4. Content script's `EZITERMS_WEBSITE_ORIGINS` already includes `http://localhost:3000`, so tokens written to localStorage by the local frontend are auto-synced to chrome.storage.local for the extension.
 
-### How the user runs this on their machine
-```
-# 1. Clone + install
-cd frontend && yarn install
-cd ../extension && yarn install
+## Update — UX + speed pass (2026-04-16)
 
-# 2. Start the local frontend (talks to the preview backend automatically)
-cd frontend && yarn dev           # http://localhost:3000
+### (a) Chatbot markdown renders properly
+Added `react-markdown` + `remark-gfm` to the frontend and a curated set of style-minimal `components` for `<p>/<ul>/<ol>/<li>/<strong>/<em>/<code>/<blockquote>` etc. Anee's replies now show real headings, bold, lists, and inline code instead of raw `**stars**`. Screenshot confirms a "Top 3 Risks 🚩" heading + nested bullet list rendering correctly.
 
-# 3. Build the extension (preview URL baked in by default)
-cd ../extension && yarn build     # or: unzip extension/dist.zip
+### (b) Extension "analysis vanished into history" fix
+When a new scan finishes, the chip for that scan now animates a soft green pulse (`@keyframes eziJustScanned`, 1.8s) and the side-panel **auto-switches** to the tab matching `currentPageUrl` whenever the user navigates to a page that already has a scan. So users never lose their place and get a clear visual confirmation that the scan landed on the current page.
 
-# 4. Chrome → chrome://extensions → Developer mode → Load unpacked → pick extension/dist
-# 5. Open side panel → Sign in → opens http://localhost:3000/?login → credentials land in preview backend.
-```
+### (c) Main-app chat accepts a URL
+The URL branch already existed client-side; it now sends `{url, crawl:true}` to the backend which fetches + optionally crawls T&C sub-pages. The bot bubble also surfaces "Crawled N pages from <source_url>" as a markdown link above the risk card.
 
-No local backend needed — everything API-side goes to the preview.
+### (d) Softer, intent-aware LLM prompts
+Rewrote `TERMS_ANALYZE_PROMPT`: no rigid categorisation checklist, explicit guidance that mild clauses shouldn't be flagged "high", permission to return fewer items when terms are benign, and encouragement to include user-friendly clauses framed positively as "low". Rewrote `CHATBOT_PROMPT` to require Markdown output, ground answers in terms, label inferences when guessing, and cap responses at ~150 words.
+
+### (e) Speed-up
+- **Content-hash LRU cache** (256 entries, 24 h TTL) in `services/termsanalyse.py`, keyed by SHA-256(model_id || normalised_terms). Repeat scans of the same page return in ~200 ms (versus ~11 s for a fresh LLM call — **~50× faster**). Verified live on the preview backend.
+- **Classifier skip** when the caller supplies a URL — user intent is already explicit, no need to re-validate after crawling a page the user pointed at.
+- **Robust JSON extraction** (`_extract_json_array`) that handles markdown fences, nested keys, and trailing garbage — prevents the occasional "LLM returned invalid JSON" 500 that previously forced retries.
+
+### (f) Recursive T&C crawler
+New `services/url_fetcher.py` (httpx + BeautifulSoup) + `/api/fetch-url` endpoint + URL branch on `/api/analyze-terms`. Fetches the starting page, then follows up to 4 **same-origin** links whose path or anchor text matches `(terms|tos|t&c|privacy|legal|eula|user-agreement|conditions)`, concatenates the visible text, and analyses the whole thing in one LLM call. Verified against iubenda.com — 5 pages fetched, 5 distinct risks surfaced, score 10.91 (appropriate for a compliance tool, not paranoid).
+
+### Files touched this session
+- **Backend**: `main.py` (schema + new endpoints), `services/termsanalyse.py` (cache + parser), `services/prompts.py` (rewritten), `services/url_fetcher.py` (new), `requirements.txt` (+beautifulsoup4).
+- **Frontend**: `App.jsx` (markdown rendering, URL branch update), `package.json` (+react-markdown, +remark-gfm).
+- **Extension**: `ExtensionMainContent.tsx` (auto-switch to current-page tab, just-scanned pulse, keyframes).
+
+### Live verification
+- URL crawler: `iubenda.com/en/terms-and-conditions-generator` → 5 pages → 5-item result, 10.9% risk.
+- Cache: same URL second run → **200 ms** (down from 17 s).
+- Chatbot markdown: returns a 12-line reply with a heading, three bold-subheaded items, nested bullets, and a TL;DR — renders as formatted markdown in the UI.
+- Extension: rebuilt dist + dist.zip with the pulse + auto-switch logic.

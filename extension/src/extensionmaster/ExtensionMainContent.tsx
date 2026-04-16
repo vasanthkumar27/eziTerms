@@ -129,6 +129,8 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
     []
   );
 
+  const [justScannedTabId, setJustScannedTabId] = useState<string | null>(null);
+
   const addOrUpdateTab = useCallback(
     (url: string, data: { termsText: string; analysisResult: RiskEntry[] }) => {
       // Guarantee a non-empty URL so a tab is always created - avoids silent
@@ -157,10 +159,31 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
         return [tab, ...filtered];
       });
       setActiveTabId(tabId);
+      setJustScannedTabId(tabId);
       onNotifyContentScript?.(safeUrl, data.analysisResult, data.termsText);
     },
     [onNotifyContentScript]
   );
+
+  // Auto-fade the "just scanned" pulse after a moment.
+  useEffect(() => {
+    if (!justScannedTabId) return;
+    const handle = setTimeout(() => setJustScannedTabId(null), 3200);
+    return () => clearTimeout(handle);
+  }, [justScannedTabId]);
+
+  // When the user navigates to a different page, prefer showing that page's
+  // existing scan tab (if any) so the result doesn't feel like it "vanished
+  // into history". If there's no tab for the current URL, leave the active
+  // tab alone so ongoing reading isn't interrupted.
+  useEffect(() => {
+    if (!currentPageUrl) return;
+    const id = urlToId(currentPageUrl);
+    const match = scanTabs.find((t) => t.id === id);
+    if (match && match.id !== activeTabId) {
+      setActiveTabId(match.id);
+    }
+  }, [currentPageUrl, scanTabs, activeTabId]);
 
   const removeTab = useCallback(async (id: string) => {
     const target = scanTabs.find((t) => t.id === id);
@@ -193,6 +216,13 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
 
   return (
     <div style={mainShell}>
+      <style>{`
+        @keyframes eziJustScanned {
+          0%   { box-shadow: 0 0 0 0 rgba(52, 211, 153, 0.85), 0 6px 18px rgba(52, 211, 153, 0.0); }
+          30%  { box-shadow: 0 0 0 8px rgba(52, 211, 153, 0.0), 0 6px 22px rgba(52, 211, 153, 0.45); }
+          100% { box-shadow: 0 0 0 2px rgba(52, 211, 153, 0.65), 0 6px 18px rgba(52, 211, 153, 0.25); }
+        }
+      `}</style>
       <div style={utilityBar}>
         <div style={{ display: 'flex', flexDirection: 'column', gap: 2 }}>
           <span style={eyebrowLabel}>Anee workspace</span>
@@ -217,7 +247,11 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
                   background: activeTabId === t.id ? '#fff' : fusion.bgInput,
                   color: activeTabId === t.id ? '#000' : fusion.text,
                   border: activeTabId === t.id ? 'none' : `1px solid ${fusion.border}`,
-                  boxShadow: activeTabId === t.id ? fusion.shadowSm : 'none',
+                  boxShadow: justScannedTabId === t.id
+                    ? '0 0 0 2px rgba(52, 211, 153, 0.65), 0 6px 18px rgba(52, 211, 153, 0.25)'
+                    : (activeTabId === t.id ? fusion.shadowSm : 'none'),
+                  animation: justScannedTabId === t.id ? 'eziJustScanned 1.8s ease-out' : undefined,
+                  transition: 'box-shadow 0.25s ease',
                 }}
               >
                 {t.urlDisplay}
