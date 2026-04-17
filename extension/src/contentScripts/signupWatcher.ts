@@ -101,7 +101,7 @@ function showToast(opts: {
   hostname: string;
   url: string;
   title: string;
-  onSave: () => void;
+  onSave: () => void | Promise<void>;
   onAnalyze?: () => void;
 }): void {
   dismissToast();
@@ -129,7 +129,6 @@ function showToast(opts: {
     'animation:eziToastIn .25s ease-out',
   ].join(';');
 
-  // Inject keyframes once
   if (!document.getElementById('distil-signup-toast-style')) {
     const style = document.createElement('style');
     style.id = 'distil-signup-toast-style';
@@ -137,7 +136,6 @@ function showToast(opts: {
     document.head.appendChild(style);
   }
 
-  const safeTitle = opts.title.replace(/[<>]/g, '');
   const safeHost = opts.hostname.replace(/[<>]/g, '');
   const analyzeBtnHtml = opts.onAnalyze
     ? `<button id="distil-toast-analyze" data-testid="distil-toast-analyze" style="background:#06B6D4;color:#061214;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Analyze</button>`
@@ -146,29 +144,40 @@ function showToast(opts: {
     <div style="display:flex;gap:10px;align-items:flex-start">
       <div style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.35);display:flex;align-items:center;justify-content:center;color:#06B6D4;font-weight:700;font-size:13px">D</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;color:#fff;margin-bottom:2px">${opts.onAnalyze ? `Analyze ${safeHost}'s terms?` : `Agreeing to terms at ${safeHost}?`}</div>
-        <div style="color:rgba(255,255,255,0.72);margin-bottom:10px">
+        <div id="distil-toast-title" style="font-weight:600;color:#fff;margin-bottom:2px">${opts.onAnalyze ? `Analyze ${safeHost}&apos;s terms?` : `Agreeing to terms at ${safeHost}?`}</div>
+        <div id="distil-toast-body" style="color:rgba(255,255,255,0.72);margin-bottom:10px">
           ${opts.onAnalyze
-            ? `We found the Terms & Privacy links for this consent screen. Analyze the risks or save it to your watchlist.`
-            : `We found the T&amp;C for this page. Save it to your Distil watchlist and we'll email you if it ever changes.`}
+            ? `We found the Terms &amp; Privacy links for this consent screen. Analyze the risks or save it to your watchlist.`
+            : `We found the T&amp;C for this page. Save it to your Distil watchlist and we&apos;ll email you if it ever changes.`}
         </div>
-        <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
+        <div id="distil-toast-actions" style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
           <button id="distil-toast-dismiss" style="background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit">Not now</button>
           <button id="distil-toast-save" data-testid="distil-toast-save" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Save &amp; watch</button>
           ${analyzeBtnHtml}
         </div>
-        <div style="margin-top:8px;font-size:11.5px;color:rgba(255,255,255,0.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${opts.url}">${opts.url}</div>
+        <div id="distil-toast-status" style="margin-top:8px;font-size:11.5px;color:rgba(255,255,255,0.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${opts.url}">${opts.url}</div>
       </div>
       <button id="distil-toast-close" aria-label="Close" style="background:transparent;color:rgba(255,255,255,0.45);border:none;cursor:pointer;font-size:18px;line-height:1;padding:0 2px">×</button>
     </div>`;
 
   document.body.appendChild(wrapper);
   const close = () => dismissToast();
+  const saveBtn = wrapper.querySelector<HTMLButtonElement>('#distil-toast-save');
+  const statusEl = wrapper.querySelector<HTMLDivElement>('#distil-toast-status');
+  const actionsEl = wrapper.querySelector<HTMLDivElement>('#distil-toast-actions');
+  const bodyEl = wrapper.querySelector<HTMLDivElement>('#distil-toast-body');
   wrapper.querySelector('#distil-toast-dismiss')?.addEventListener('click', close);
   wrapper.querySelector('#distil-toast-close')?.addEventListener('click', close);
-  wrapper.querySelector('#distil-toast-save')?.addEventListener('click', () => {
-    opts.onSave();
-    close();
+  saveBtn?.addEventListener('click', () => {
+    // Fire save handler; do NOT close immediately. The handler (onSave)
+    // may call back via updateToastState() with success/error.
+    if (saveBtn) {
+      saveBtn.disabled = true;
+      saveBtn.textContent = 'Saving…';
+      saveBtn.style.opacity = '0.7';
+      saveBtn.style.cursor = 'default';
+    }
+    try { opts.onSave(); } catch { /* ignore */ }
   });
   if (opts.onAnalyze) {
     wrapper.querySelector('#distil-toast-analyze')?.addEventListener('click', () => {
@@ -176,22 +185,63 @@ function showToast(opts: {
       close();
     });
   }
-  // auto-dismiss after 25s
-  setTimeout(close, 25000);
-  // Prevent unused-variable TS warning for safeTitle (kept for future use).
-  void safeTitle;
+  // Expose updater so the save callback can flip the toast into success/error states.
+  (wrapper as any).__distilUpdate = (
+    state: 'success' | 'error' | 'login_required',
+    message?: string,
+  ) => {
+    if (state === 'success') {
+      if (bodyEl) bodyEl.innerHTML = `Added to your Distil watchlist — we&apos;ll email if anything changes.`;
+      if (statusEl) { statusEl.textContent = '✓ Saved'; statusEl.style.color = '#4ade80'; }
+      if (actionsEl) actionsEl.style.display = 'none';
+      setTimeout(close, 2200);
+    } else if (state === 'login_required') {
+      if (bodyEl) bodyEl.innerHTML = `Sign in to Distil first — we just opened the side panel for you.`;
+      if (statusEl) { statusEl.textContent = 'Sign-in needed'; statusEl.style.color = '#fbbf24'; }
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Try again'; saveBtn.style.opacity = '1'; saveBtn.style.cursor = 'pointer'; }
+      setTimeout(close, 4500);
+    } else {
+      if (statusEl) { statusEl.textContent = message || 'Could not save'; statusEl.style.color = '#f87171'; }
+      if (saveBtn) { saveBtn.disabled = false; saveBtn.textContent = 'Retry'; saveBtn.style.opacity = '1'; saveBtn.style.cursor = 'pointer'; }
+    }
+  };
+  // auto-dismiss safety net (30s)
+  setTimeout(() => { if (document.getElementById(TOAST_ID) === wrapper) close(); }, 30000);
 }
 
-function sendSaveRequest(detail: { url: string; title: string; pageUrl: string }) {
+function updateToastState(state: 'success' | 'error' | 'login_required', message?: string): void {
+  const w = document.getElementById(TOAST_ID) as any;
+  if (w && typeof w.__distilUpdate === 'function') w.__distilUpdate(state, message);
+}
+
+function sendSaveRequest(
+  detail: { url: string; title: string; pageUrl: string },
+  cb?: (result: { ok: boolean; error?: string; data?: unknown }) => void,
+) {
   try {
     const ext: any = typeof chrome !== 'undefined' ? chrome : null;
-    if (!ext?.runtime?.sendMessage) return;
-    ext.runtime.sendMessage({ action: 'DISTIL_ACCEPT_TERMS', payload: detail }, (_resp: unknown) => {
-      // No-op; background handles the API call.
+    if (!ext?.runtime?.sendMessage) { cb?.({ ok: false, error: 'no_runtime' }); return; }
+    ext.runtime.sendMessage({ action: 'DISTIL_ACCEPT_TERMS', payload: detail }, (resp: any) => {
+      // chrome.runtime.lastError is set when the background worker went away.
+      const err = ext.runtime.lastError?.message;
+      if (err) { cb?.({ ok: false, error: err }); return; }
+      cb?.(resp || { ok: false, error: 'no_response' });
     });
-  } catch {
-    // context invalidated
+  } catch (e) {
+    cb?.({ ok: false, error: String(e) });
   }
+}
+
+function handleSaveWithFeedback(detail: { url: string; title: string; pageUrl: string }): void {
+  sendSaveRequest(detail, (result) => {
+    if (result.ok) {
+      updateToastState('success');
+    } else if (result.error === 'not_logged_in') {
+      updateToastState('login_required');
+    } else {
+      updateToastState('error', 'Could not save — try again');
+    }
+  });
 }
 
 function onFormSubmitted(ev: SubmitEvent | Event): void {
@@ -205,7 +255,7 @@ function onFormSubmitted(ev: SubmitEvent | Event): void {
       hostname: window.location.hostname,
       url: link.url,
       title: link.title,
-      onSave: () => sendSaveRequest({
+      onSave: () => handleSaveWithFeedback({
         url: link.url,
         title: link.title,
         pageUrl: window.location.href,
@@ -298,7 +348,7 @@ function maybeShowConsentToast(): void {
     hostname: targetHost,
     url,
     title: `${targetHost} — Terms & Privacy`,
-    onSave: () => sendSaveRequest({
+    onSave: () => handleSaveWithFeedback({
       url,
       title: `${targetHost} — ${tosUrl ? 'Terms of Service' : 'Privacy Policy'}`,
       pageUrl: window.location.href,
@@ -399,7 +449,7 @@ function onCookieAcceptClick(ev: MouseEvent): void {
       hostname: window.location.hostname,
       url: link.url,
       title: link.title,
-      onSave: () => sendSaveRequest({
+      onSave: () => handleSaveWithFeedback({
         url: link.url,
         title: link.title,
         pageUrl: window.location.href,
