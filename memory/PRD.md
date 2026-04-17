@@ -174,3 +174,35 @@ New `services/url_fetcher.py` (httpx + BeautifulSoup) + `/api/fetch-url` endpoin
 - **Drop in `RESEND_API_KEY`** (grab from resend.com/api-keys) to activate the real emails. Everything else is wired.
 - Verify the signup toast in a real Chrome + visit a live signup page (github.com/signup, for instance) since the smoke test was backend-only.
 - Optional: add the watchlist view inside the extension sidepanel itself.
+
+## Update — Haiku, auth-sync, cookie-banner, history (2026-04-17)
+
+### Model swap → Claude Haiku 4.5
+- `backend/.env`: `ANTHROPIC_MODEL=claude-haiku-4-5-20251001`. No code changes — `services/bedrock_llm.py` already reads the env var. Live run: 9.8 s fresh analyze vs ~17 s with Sonnet, cached hits still ~200 ms. You can flip back to Sonnet any time by editing the `.env`.
+
+### Auth sync extension ↔ preview frontend
+- Root cause: the content script's `DISTIL_WEBSITE_ORIGINS` allowlist was an exact-match-only list that only contained `localhost:*` and `*.haptix.in` entries. When the user signed into the **preview URL** the content script saw the page as "not a Distil website" → localStorage changes were never mirrored to `chrome.storage.local` → the sidepanel stayed logged out.
+- Fix: added a `DISTIL_ORIGIN_SUFFIXES` list (`.preview.emergentagent.com`, `.haptix.in`) and upgraded `isDistilWebsite()` to also match hostname suffixes. Any preview pod now syncs automatically — the user never has to rebuild the extension when Emergent rotates the preview URL.
+- Also synced the same pattern into `ExtensionPopup.tsx`'s `WEBSITE_ORIGINS` → Google sign-in postMessage handler now accepts preview origins too.
+
+### Cookie-banner auto-detect
+- Extended `contentScripts/signupWatcher.ts` with an `installCookieBannerWatcher()` that listens for click events in the capture phase. Matches any button/link whose visible text contains `(accept all|allow all|accept cookies|agree to all|i accept|got it|ok|allow)` AND whose closest 8 ancestors contain a `cookie|consent|privacy|gdpr|tracking` hint in id/class/role/aria-label.
+- On match, scopes the privacy-link search to the banner first, then the whole document. Shows the **same glass toast** (now worded generically: "Agreeing to terms at <host>?") with the privacy-policy URL. On Save, posts to `/api/accepted-terms` via the background-script handler. Signup detection unchanged.
+
+### History page (website)
+- New `frontend/src/History.jsx` wired into the main-app nav next to Watchlist. Shows the last 50 scans from `/api/history` with a colored score bubble (red >70 / amber 40-70 / yellow 20-40 / green <20), source pill (TEXT / URL / FILE), relative timestamp, finding count, per-row **Preview** (inline expand of top 6 findings with HIGH/MEDIUM/LOW chips) and **Reopen** (drops the saved scan back into the chat pane with full risk card). Empty and error states handled. Screenshot confirms 11 scans listed with varying scores and correct colors.
+
+### Files changed
+- **Backend**: `.env` (model swap).
+- **Frontend**: `App.jsx` (nav + view switcher), `History.jsx` (new).
+- **Extension**: `src/contentScripts/sidebarContent.tsx` (suffix match), `src/extensionmaster/ExtensionPopup.tsx` (helper + suffix match), `src/contentScripts/signupWatcher.ts` (cookie-banner watcher + generic toast copy).
+
+### Live verification
+- Auth origins baked into `content.js`: `localhost:3000`, `localhost:5173`, `distil.haptix.in`, the explicit preview URL, plus `.preview.emergentagent.com` / `.haptix.in` suffix patterns.
+- Haiku 4.5 analyze call: 9.8 s fresh, 200 ms cached.
+- History page renders 11 previously-run scans with working Preview + Reopen.
+
+### Backlog
+- Grab `RESEND_API_KEY` whenever you want real emails (still dry-run-logging right now).
+- Real-Chrome smoke test of the cookie-banner toast on common sites (nytimes.com, bbc.com, any OneTrust-based site).
+- Optional: add the watchlist + history views inside the extension sidepanel for parity with the web app.

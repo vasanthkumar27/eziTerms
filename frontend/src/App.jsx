@@ -6,6 +6,7 @@ import LoginModal from './LoginModal';
 import RiskCard from './RiskCard';
 import Landing from './Landing';
 import Watchlist from './Watchlist';
+import History from './History';
 
 function riskScore(result) {
   if (!Array.isArray(result) || !result.length) return null;
@@ -36,7 +37,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [lastAnalysis, setLastAnalysis] = useState(null);
   const [lastTermsText, setLastTermsText] = useState('');
-  const [view, setView] = useState('chat'); // 'chat' | 'watchlist'
+  const [view, setView] = useState('chat'); // 'chat' | 'watchlist' | 'history'
   const fileRef = useRef(null);
   const bottomRef = useRef(null);
   const inputRef = useRef(null);
@@ -177,12 +178,20 @@ export default function App() {
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <button onClick={() => { setStarted(false); }} style={navLink}>Home</button>
           <button
+            onClick={() => setView(view === 'history' ? 'chat' : 'history')}
+            className="glass-btn"
+            style={{ ...navChipBtn, background: view === 'history' ? 'rgba(255,255,255,0.14)' : undefined }}
+            data-testid="nav-history-toggle"
+          >
+            History
+          </button>
+          <button
             onClick={() => setView(view === 'watchlist' ? 'chat' : 'watchlist')}
             className="glass-btn"
-            style={navChipBtn}
+            style={{ ...navChipBtn, background: view === 'watchlist' ? 'rgba(255,255,255,0.14)' : undefined }}
             data-testid="nav-watchlist-toggle"
           >
-            {view === 'watchlist' ? 'Back to chat' : 'Watchlist'}
+            Watchlist
           </button>
           <button onClick={handleLogout} style={navLink}>Sign out</button>
         </div>
@@ -190,6 +199,17 @@ export default function App() {
 
       {view === 'watchlist' ? (
         <Watchlist onBack={() => setView('chat')} />
+      ) : view === 'history' ? (
+        <History onReopen={(snap) => {
+          setLastAnalysis(snap.result);
+          setMessages(m => [...m, {
+            role: 'user', content: snap.title, label: 'From history',
+          }, {
+            role: 'bot', content: snap.url ? `Reopened from history — ${snap.url}` : 'Reopened from history.',
+            analysis: snap.result, score: snap.risk_score,
+          }]);
+          setView('chat');
+        }} />
       ) : (
       <>
 

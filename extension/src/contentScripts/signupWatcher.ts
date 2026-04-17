@@ -140,11 +140,11 @@ function showToast(opts: {
   const safeHost = opts.hostname.replace(/[<>]/g, '');
   wrapper.innerHTML = `
     <div style="display:flex;gap:10px;align-items:flex-start">
-      <div style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(50,145,255,0.18);border:1px solid rgba(50,145,255,0.35);display:flex;align-items:center;justify-content:center;color:#3291ff;font-weight:700;font-size:13px">E</div>
+      <div style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(50,145,255,0.18);border:1px solid rgba(50,145,255,0.35);display:flex;align-items:center;justify-content:center;color:#3291ff;font-weight:700;font-size:13px">D</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;color:#fff;margin-bottom:2px">Signing up at ${safeHost}?</div>
+        <div style="font-weight:600;color:#fff;margin-bottom:2px">Agreeing to terms at ${safeHost}?</div>
         <div style="color:rgba(255,255,255,0.72);margin-bottom:10px">
-          We found the T&amp;C for this signup. Save it to your Distil watchlist and we'll email you if it changes.
+          We found the T&amp;C for this page. Save it to your Distil watchlist and we'll email you if it ever changes.
         </div>
         <div style="display:flex;gap:6px;justify-content:flex-end">
           <button id="distil-toast-dismiss" style="background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit">Not now</button>
@@ -207,6 +207,80 @@ export function installSignupWatcher(): void {
   try {
     // Capture phase so we run even if the site's handler calls stopPropagation later.
     document.addEventListener('submit', onFormSubmitted, true);
+    installCookieBannerWatcher();
+  } catch {
+    // ignore
+  }
+}
+
+// ────────────────────── Cookie-consent banner watcher ──────────────────────
+
+const COOKIE_ACCEPT_PATTERN = /\b(accept\s*all|allow\s*all|accept\s*cookies|accept\s*&?\s*continue|agree\s*to\s*all|i\s*accept|got\s*it|ok|allow)\b/i;
+const COOKIE_BANNER_HINT = /\b(cookie|consent|privacy|gdpr|tracking)\b/i;
+const PRIVACY_LINK_PATTERN = /(privacy|cookie.?policy|data.?protection|privacy.?policy)/i;
+
+function isInsideCookieBanner(el: Element | null): boolean {
+  let cur = el;
+  for (let i = 0; i < 8 && cur; i += 1) {
+    const id = (cur as HTMLElement).id || '';
+    const cls = (cur as HTMLElement).className || '';
+    const role = (cur as HTMLElement).getAttribute?.('role') || '';
+    const aria = (cur as HTMLElement).getAttribute?.('aria-label') || '';
+    const haystack = `${id} ${typeof cls === 'string' ? cls : ''} ${role} ${aria}`;
+    if (COOKIE_BANNER_HINT.test(haystack)) return true;
+    cur = cur.parentElement;
+  }
+  return false;
+}
+
+function findPrivacyLink(scope: Element | Document): { url: string; title: string } | null {
+  const anchors = Array.from(scope.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  for (const a of anchors) {
+    const href = a.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('javascript:') || href.startsWith('mailto:')) continue;
+    const text = (a.textContent || '').trim();
+    if (!PRIVACY_LINK_PATTERN.test(text) && !PRIVACY_LINK_PATTERN.test(href)) continue;
+    try {
+      const u = new URL(href, window.location.href);
+      if (u.protocol !== 'http:' && u.protocol !== 'https:') continue;
+      return { url: u.toString(), title: text.slice(0, 120) || u.hostname };
+    } catch { continue; }
+  }
+  return null;
+}
+
+function onCookieAcceptClick(ev: MouseEvent): void {
+  try {
+    const target = ev.target as Element | null;
+    if (!target) return;
+    // Find the nearest clickable button/link
+    const btn = (target.closest('button, a, [role="button"]') as Element | null) || target;
+    const text = ((btn as HTMLElement).innerText || btn.textContent || '').trim();
+    if (!text || !COOKIE_ACCEPT_PATTERN.test(text)) return;
+    if (!isInsideCookieBanner(btn)) return;
+    // Look for a privacy-policy link in the banner, falling back to the whole doc.
+    const banner = btn.closest('[class*="cookie" i], [id*="cookie" i], [class*="consent" i], [id*="consent" i], [role="dialog"]') || document;
+    const link = findPrivacyLink(banner) || findPrivacyLink(document);
+    if (!link) return;
+    showToast({
+      hostname: window.location.hostname,
+      url: link.url,
+      title: link.title,
+      onSave: () => sendSaveRequest({
+        url: link.url,
+        title: link.title,
+        pageUrl: window.location.href,
+      }),
+    });
+  } catch {
+    // never break the host page's consent flow
+  }
+}
+
+function installCookieBannerWatcher(): void {
+  try {
+    // Capture phase so we run before the site's own handler hides the banner.
+    document.addEventListener('click', onCookieAcceptClick, true);
   } catch {
     // ignore
   }

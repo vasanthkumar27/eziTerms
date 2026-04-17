@@ -24,6 +24,25 @@ const WEBSITE_ORIGINS = [
   'http://localhost:3000',
 ];
 
+// Any hostname ending with one of these suffixes is also trusted (covers the
+// rotating *.preview.emergentagent.com URLs so the user doesn't have to
+// rebuild the extension every time Emergent rotates the preview pod).
+const WEBSITE_ORIGIN_SUFFIXES = [
+  '.preview.emergentagent.com',
+  '.haptix.in',
+];
+
+function isTrustedWebsiteOrigin(origin: string | undefined | null): boolean {
+  if (!origin) return false;
+  if (WEBSITE_ORIGINS.includes(origin)) return true;
+  try {
+    const host = new URL(origin).hostname;
+    return WEBSITE_ORIGIN_SUFFIXES.some((suf) => host === suf.slice(1) || host.endsWith(suf));
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Actively recover tokens from open haptix.in tabs when chrome.storage.local
  * has none. Handles the case where the user is logged in on the website but

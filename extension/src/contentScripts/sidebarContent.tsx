@@ -27,6 +27,10 @@ const envWebsite = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_
   ? String(import.meta.env.VITE_WEBSITE_BASE_URL).trim().replace(/\/$/, '')
   : '';
 
+const envApi = (typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_BASE_URL)
+  ? String(import.meta.env.VITE_API_BASE_URL).trim().replace(/\/api\/?$/, '').replace(/\/$/, '')
+  : '';
+
 const DISTIL_WEBSITE_ORIGINS: string[] = [
   'http://localhost:5173',
   'https://localhost:5173',
@@ -42,6 +46,16 @@ const DISTIL_WEBSITE_ORIGINS: string[] = [
   'https://www.haptix.in',
   'https://distil.haptix.in',
   ...(envWebsite ? [envWebsite] : []),
+  // The preview frontend and the preview backend are served from the same
+  // host (api is under /api), so the API origin is also a valid website origin.
+  ...(envApi ? [envApi] : []),
+];
+
+// Hostname suffixes that count as Distil-trusted (covers all *.preview.emergentagent.com
+// pods so users signed in on any preview sync tokens to the extension automatically).
+const DISTIL_ORIGIN_SUFFIXES: string[] = [
+  '.preview.emergentagent.com',
+  '.haptix.in',
 ];
 
 function isJwtFormat(s: unknown): boolean {
@@ -52,7 +66,11 @@ function isJwtFormat(s: unknown): boolean {
 
 function isDistilWebsite(): boolean {
   try {
-    return DISTIL_WEBSITE_ORIGINS.some((o) => window.location.origin === o);
+    const origin = window.location.origin;
+    if (DISTIL_WEBSITE_ORIGINS.some((o) => origin === o)) return true;
+    const host = window.location.hostname;
+    if (DISTIL_ORIGIN_SUFFIXES.some((suf) => host === suf.slice(1) || host.endsWith(suf))) return true;
+    return false;
   } catch {
     return false;
   }
@@ -241,7 +259,15 @@ if (typeof window !== 'undefined') {
   });
 
   window.addEventListener('message', (ev: MessageEvent) => {
-    if (ev.data?.type !== 'DISTIL_GOOGLE_SIGNIN_REQUEST' || !DISTIL_WEBSITE_ORIGINS.includes(ev.origin)) return;
+    if (ev.data?.type !== 'DISTIL_GOOGLE_SIGNIN_REQUEST') return;
+    const evOrigin = ev.origin || '';
+    const suffixOk = (() => {
+      try {
+        const host = new URL(evOrigin).hostname;
+        return DISTIL_ORIGIN_SUFFIXES.some((suf) => host === suf.slice(1) || host.endsWith(suf));
+      } catch { return false; }
+    })();
+    if (!DISTIL_WEBSITE_ORIGINS.includes(evOrigin) && !suffixOk) return;
     const requestId = ev.data.requestId ?? 'default';
     try {
       const ext = safeChrome(() => (typeof chrome !== 'undefined' ? chrome : (typeof browser !== 'undefined' ? browser : null)), null);
