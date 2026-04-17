@@ -613,66 +613,86 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
 
         {sortedResults && (
           <div style={resultsContainer}>
+            <style>{`
+              @keyframes distil-finding-in {
+                from { opacity: 0; transform: translateY(8px); }
+                to   { opacity: 1; transform: translateY(0); }
+              }
+              .distil-finding-row:hover { background: rgba(255, 255, 255, 0.035); }
+              .distil-finding-row:last-child { border-bottom: none; }
+            `}</style>
             {riskScore != null && (
-              <div style={{ ...riskMeterCard, borderColor: getRiskScoreColor(riskScore).border, backgroundColor: getRiskScoreColor(riskScore).bg }}>
+              <div
+                style={{
+                  ...riskMeterCard,
+                  borderColor: getRiskScoreColor(riskScore).border,
+                }}
+                data-testid="risk-meter-card"
+              >
                 <div style={riskMeterTitle}>Risk meter</div>
+                <div style={{ display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: 8 }}>
+                  <span style={{ ...riskMeterScore, color: getRiskScoreColor(riskScore).text }} data-testid="risk-meter-score">{riskScore}</span>
+                  <span style={{ ...riskMeterSub, color: getRiskScoreColor(riskScore).text }}>{getRiskScoreLabel(riskScore)}</span>
+                </div>
                 <div style={riskMeterTrack}>
                   <div style={riskMeterTrackGradient} />
                   <div style={{ ...riskMeterPointer, left: `${Math.min(100, Math.max(0, riskScore))}%` }} title={`${riskScore} — ${getRiskScoreLabel(riskScore)}`} />
                 </div>
                 <div style={riskMeterLabels}>
                   <span style={riskMeterNum}>0</span>
-                  <span style={{ ...riskMeterScore, color: getRiskScoreColor(riskScore).text }}>{riskScore}</span>
                   <span style={riskMeterNum}>100</span>
                 </div>
-                <div style={{ ...riskMeterSub, color: getRiskScoreColor(riskScore).text }}>{getRiskScoreLabel(riskScore)}</div>
               </div>
             )}
-            <div style={summaryStats}>
-              <div style={statItem}>
-                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.high.accent }}></div>
-                <span>High <span style={statCount}>{totalHigh}</span></span>
+            <div style={summaryStats} data-testid="risk-breakdown">
+              <div style={{ ...statItem, borderLeftColor: RISK_PALETTE.high.accent }}>
+                <span style={statCount}>{totalHigh}</span>
+                <span style={statLabel}>High</span>
               </div>
-              <div style={statItem}>
-                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.medium.accent }}></div>
-                <span>Medium <span style={statCount}>{totalMedium}</span></span>
+              <div style={{ ...statItem, borderLeftColor: RISK_PALETTE.medium.accent }}>
+                <span style={statCount}>{totalMedium}</span>
+                <span style={statLabel}>Medium</span>
               </div>
-              <div style={statItem}>
-                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.low.accent }}></div>
-                <span>Low <span style={statCount}>{totalLow}</span></span>
+              <div style={{ ...statItem, borderLeftColor: RISK_PALETTE.low.accent }}>
+                <span style={statCount}>{totalLow}</span>
+                <span style={statLabel}>Low</span>
               </div>
             </div>
 
-            {sortedResults.map((entry, index) => {
-              const hue = riskHue(entry.risktype === 'none' ? 'low' : entry.risktype);
-              const isOpen = expandedSummary === entry.lineSummary;
-              return (
-              <div
-                key={index}
-                style={{
-                  ...riskItemRow,
-                  borderLeft: `3px solid ${hue.accent}`,
-                  background: hue.bg,
-                }}
-                onClick={() => setExpandedSummary(isOpen ? null : entry.lineSummary)}
-              >
-                <div style={riskItemHeader}>
-                  <span style={{ ...riskBadgePill, color: hue.text, background: `${hue.accent}1F`, border: `1px solid ${hue.border}` }}>
-                    {(entry.risktype === 'none' ? 'low' : entry.risktype).toUpperCase()}
-                  </span>
-                  <p style={riskSummaryText}>{entry.lineSummary}</p>
-                  <span style={arrowStyle(isOpen)} aria-hidden="true">
-                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
-                      <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                    </svg>
-                  </span>
+            <div style={findingsList}>
+              {sortedResults.map((entry, index) => {
+                const hue = riskHue(entry.risktype === 'none' ? 'low' : entry.risktype);
+                const isOpen = expandedSummary === entry.lineSummary;
+                return (
+                <div
+                  key={index}
+                  data-testid={`finding-row-${index}`}
+                  style={{
+                    ...riskItemRow,
+                    borderLeft: `3px solid ${hue.accent}`,
+                    animationDelay: `${Math.min(index * 50, 600)}ms`,
+                  }}
+                  className="distil-finding-row"
+                  onClick={() => setExpandedSummary(isOpen ? null : entry.lineSummary)}
+                >
+                  <div style={riskItemHeader}>
+                    <span style={{ ...riskBadgePill, color: hue.text, background: hue.bg, border: `1px solid ${hue.border}` }}>
+                      {(entry.risktype === 'none' ? 'low' : entry.risktype).toUpperCase()}
+                    </span>
+                    <p style={riskSummaryText}>{entry.lineSummary}</p>
+                    <span style={arrowStyle(isOpen)} aria-hidden="true" data-testid={`finding-expand-button-${index}`}>
+                      <svg width="13" height="13" viewBox="0 0 24 24" fill="none">
+                        <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+                      </svg>
+                    </span>
+                  </div>
+                  {isOpen && entry.riskReason && (
+                    <p style={{ ...riskReasonText, borderTop: `1px dashed ${hue.border}` }}>{entry.riskReason}</p>
+                  )}
                 </div>
-                {isOpen && entry.riskReason && (
-                  <p style={{ ...riskReasonText, borderTop: `1px dashed ${hue.border}` }}>{entry.riskReason}</p>
-                )}
-              </div>
-              );
-            })}
+                );
+              })}
+            </div>
             <button type="button" data-distil-btn="secondary" onClick={handleClear} style={{ ...secondaryButton, marginTop: 12 }}>
               New scan
             </button>
@@ -719,22 +739,25 @@ const initialStateWrapper: React.CSSProperties = {
 
 const infoBox: React.CSSProperties = {
   padding: 14,
-  border: `1px solid ${fusion.border}`,
-  borderRadius: 8,
-  backgroundColor: 'rgba(255, 255, 255, 0.03)',
+  border: `1px solid ${fusion.glassBorder}`,
+  borderRadius: fusion.radiusLg,
+  background: fusion.glass,
+  backdropFilter: fusion.glassBlurSm,
+  WebkitBackdropFilter: fusion.glassBlurSm,
   color: fusion.textMuted,
   fontSize: 13,
   maxWidth: '100%',
   lineHeight: 1.45,
+  boxShadow: fusion.shadowCard,
 };
 
 const mainButton: React.CSSProperties = {
-  padding: '12px 24px',
+  padding: '11px 22px',
   fontSize: 14,
-  borderRadius: 8,
+  borderRadius: fusion.radiusSm,
   border: 'none',
-  background: '#fff',
-  color: '#000',
+  background: fusion.text,
+  color: fusion.bg,
   cursor: 'pointer',
   fontWeight: 600,
   boxShadow: 'none',
@@ -743,9 +766,11 @@ const mainButton: React.CSSProperties = {
 
 const secondaryButton: React.CSSProperties = {
   ...mainButton,
-  background: 'rgba(255, 255, 255, 0.06)',
+  background: fusion.glass,
   color: fusion.text,
-  border: `1px solid ${fusion.border}`,
+  border: `1px solid ${fusion.glassBorder}`,
+  backdropFilter: fusion.glassBlurSm,
+  WebkitBackdropFilter: fusion.glassBlurSm,
   boxShadow: 'none',
 };
 
@@ -758,49 +783,57 @@ const uploadSectionDivider: React.CSSProperties = {
 };
 
 const riskMeterCard: React.CSSProperties = {
-  padding: '10px 12px',
-  borderRadius: 8,
-  border: '1px solid',
-  marginBottom: 8,
+  padding: '16px 18px',
+  borderRadius: fusion.radiusLg,
+  background: fusion.glass,
+  backdropFilter: fusion.glassBlur,
+  WebkitBackdropFilter: fusion.glassBlur,
+  border: `1px solid ${fusion.glassBorder}`,
+  boxShadow: fusion.shadowGlass,
+  marginBottom: 10,
+  position: 'relative',
+  overflow: 'hidden',
 };
 
 const riskMeterTitle: React.CSSProperties = {
   fontSize: 9,
-  fontWeight: 600,
+  fontWeight: 700,
   textTransform: 'uppercase',
-  letterSpacing: '0.05em',
-  color: fusion.textMuted,
-  marginBottom: 6,
-  textAlign: 'center',
+  letterSpacing: fusion.letterSpacingOverline,
+  color: fusion.textSubtle,
+  marginBottom: 10,
+  textAlign: 'left',
 };
 
 const riskMeterTrack: React.CSSProperties = {
   position: 'relative',
-  height: 10,
-  borderRadius: 5,
+  height: 8,
+  borderRadius: 4,
   overflow: 'visible',
-  marginBottom: 4,
+  marginTop: 6,
+  marginBottom: 10,
 };
 
 const riskMeterTrackGradient: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
-  borderRadius: 5,
+  borderRadius: 4,
   // 3 zones matching the chip palette: green ≤32, yellow 32–72, red >72.
   background: 'linear-gradient(90deg, #22c55e 0%, #22c55e 32%, #eab308 32%, #eab308 72%, #ef4444 72%, #ef4444 100%)',
   opacity: 0.9,
+  boxShadow: '0 1px 8px rgba(0, 0, 0, 0.3) inset',
 };
 
 const riskMeterPointer: React.CSSProperties = {
   position: 'absolute',
-  top: -1,
+  top: -3,
   width: 3,
-  height: 12,
-  borderRadius: 1,
+  height: 14,
+  borderRadius: 2,
   backgroundColor: fusion.text,
-  boxShadow: '0 1px 2px rgba(0,0,0,0.4)',
+  boxShadow: '0 2px 8px rgba(0,0,0,0.55), 0 0 0 2px rgba(8, 8, 10, 0.85)',
   transform: 'translateX(-50%)',
-  transition: 'left 0.35s ease',
+  transition: `left 0.8s ${fusion.easingSpring}`,
   pointerEvents: 'none',
 };
 
@@ -809,24 +842,28 @@ const riskMeterLabels: React.CSSProperties = {
   justifyContent: 'space-between',
   alignItems: 'baseline',
   padding: '0 1px',
-  marginBottom: 2,
+  marginBottom: 4,
 };
 
 const riskMeterNum: React.CSSProperties = {
-  fontSize: 9,
-  color: fusion.textMuted,
-  fontWeight: 600,
+  fontSize: 10,
+  color: fusion.textSubtle,
+  fontWeight: 500,
 };
 
 const riskMeterScore: React.CSSProperties = {
-  fontSize: 14,
+  fontSize: 32,
   fontWeight: 700,
+  letterSpacing: fusion.letterSpacingTight,
+  lineHeight: 1,
 };
 
 const riskMeterSub: React.CSSProperties = {
-  fontSize: 10,
+  fontSize: 11,
   fontWeight: 600,
-  textAlign: 'center',
+  textAlign: 'left',
+  letterSpacing: '0.02em',
+  textTransform: 'uppercase',
 };
 
 const loaderContainer: React.CSSProperties = {
@@ -1120,70 +1157,85 @@ const maskingModalFooter: React.CSSProperties = {
 const resultsContainer: React.CSSProperties = {
   display: 'flex',
   flexDirection: 'column',
-  gap: fusion.space3,
+  gap: fusion.space2,
 };
 
 const summaryStats: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   gap: 10,
-  padding: '2px 2px 6px',
-  borderBottom: `1px dashed ${fusion.border}`,
-  marginBottom: 2,
+  padding: '2px 2px 10px',
+  marginBottom: 6,
 };
 
 const statItem: React.CSSProperties = {
-  display: 'inline-flex',
-  alignItems: 'center',
-  gap: 6,
-  fontSize: 11,
-  color: fusion.textMuted,
+  flex: 1,
+  display: 'flex',
+  flexDirection: 'column',
+  alignItems: 'flex-start',
+  gap: 2,
+  paddingLeft: 8,
+  borderLeft: '2px solid',
+  minWidth: 0,
 };
 
 const statCount: React.CSSProperties = {
   color: fusion.text,
   fontWeight: 700,
-  marginLeft: 2,
+  fontSize: 18,
+  lineHeight: 1.1,
+  letterSpacing: fusion.letterSpacingTight,
 };
 
-const statColor: React.CSSProperties = {
-  width: 7,
-  height: 7,
-  borderRadius: '50%',
-  flexShrink: 0,
+const statLabel: React.CSSProperties = {
+  fontSize: 10,
+  color: fusion.textSubtle,
+  fontWeight: 500,
+  textTransform: 'uppercase',
+  letterSpacing: '0.06em',
+};
+
+// Kept style tokens above.
+
+const findingsList: React.CSSProperties = {
+  display: 'flex',
+  flexDirection: 'column',
 };
 
 const riskItemRow: React.CSSProperties = {
-  borderRadius: 6,
-  padding: '8px 10px 8px 10px',
+  padding: '12px 14px',
   cursor: 'pointer',
   transition: fusion.transition,
+  borderBottom: `1px solid rgba(255, 255, 255, 0.04)`,
+  background: 'transparent',
+  opacity: 0,
+  animation: 'distil-finding-in 0.35s ease-out forwards',
 };
 
 const riskItemHeader: React.CSSProperties = {
   display: 'flex',
   alignItems: 'center',
-  gap: 8,
+  gap: 10,
 };
 
 const riskBadgePill: React.CSSProperties = {
-  padding: '2px 7px',
+  padding: '3px 8px',
   borderRadius: 4,
   fontSize: 9,
   fontWeight: 700,
   textTransform: 'uppercase',
-  letterSpacing: '0.06em',
-  minWidth: 42,
+  letterSpacing: fusion.letterSpacingOverline,
+  minWidth: 48,
   textAlign: 'center',
   flexShrink: 0,
 };
 
 const riskSummaryText: React.CSSProperties = {
   flex: 1,
-  fontSize: 12,
+  fontSize: 13,
   color: fusion.text,
   margin: 0,
-  lineHeight: 1.4,
+  lineHeight: 1.45,
   minWidth: 0,
 };
 
@@ -1192,9 +1244,9 @@ const arrowStyle = (isExpanded: boolean): React.CSSProperties => ({
   display: 'inline-flex',
   alignItems: 'center',
   justifyContent: 'center',
-  transition: 'transform 0.3s ease',
+  transition: 'transform 0.25s ease',
   transform: isExpanded ? 'rotate(90deg)' : 'rotate(0deg)',
-  color: fusion.textMuted,
+  color: fusion.textSubtle,
   flexShrink: 0,
 });
 

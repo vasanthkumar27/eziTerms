@@ -300,7 +300,7 @@ const ExtensionPopup: React.FC = () => {
           <LoginRedirectPage />
         </div>
       ) : (
-        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '0 14px 14px', background: 'linear-gradient(180deg, rgba(50, 145, 255, 0.03) 0%, transparent 100%)' }}>
+        <div style={{ flex: 1, minHeight: 0, overflow: 'hidden', display: 'flex', flexDirection: 'column', padding: '0 14px 14px', position: 'relative', zIndex: 10 }}>
           <AutoAnalyseToggle />
           <ExtensionMainContent
             onNotifyContentScript={notifyContentScriptOfAnalysis}
@@ -365,24 +365,34 @@ const popupWrapperStyle: React.CSSProperties = {
   minHeight: 0,
   boxSizing: 'border-box',
   backgroundColor: fusion.bg,
+  // Layered ambient glow: cyan top-right, indigo bottom-left.
+  backgroundImage: `
+    radial-gradient(ellipse 520px 440px at 110% -10%, ${fusion.ambientGlowPrimary}, transparent 60%),
+    radial-gradient(ellipse 480px 520px at -20% 110%, ${fusion.ambientGlowSecondary}, transparent 60%)
+  `,
+  backgroundAttachment: 'fixed',
   padding: 0,
   display: 'flex',
   flexDirection: 'column',
   color: fusion.text,
   overflow: 'hidden',
+  position: 'relative',
 };
 
-/* Header: compact, aligned - title + logout */
+/* Header: glass surface, sticky at top */
 const popupHeaderStyle: React.CSSProperties = {
   display: 'flex',
   justifyContent: 'space-between',
   alignItems: 'center',
   flexShrink: 0,
   minWidth: 0,
-  padding: '10px 14px',
-  borderBottom: `1px solid ${fusion.border}`,
-  background: 'rgba(0, 0, 0, 0.5)',
-  backdropFilter: 'blur(20px)',
+  padding: '12px 16px',
+  borderBottom: `1px solid ${fusion.glassBorder}`,
+  background: 'rgba(8, 8, 10, 0.55)',
+  backdropFilter: fusion.glassBlurSm,
+  WebkitBackdropFilter: fusion.glassBlurSm,
+  position: 'relative',
+  zIndex: 20,
 };
 
 const popupTitleWrap: React.CSSProperties = {
@@ -505,7 +515,9 @@ const modalOverlayStyle: React.CSSProperties = {
   left: 0,
   right: 0,
   bottom: 0,
-  backgroundColor: 'rgba(0, 0, 0, 0.7)',
+  backgroundColor: 'rgba(0, 0, 0, 0.55)',
+  backdropFilter: 'blur(8px)',
+  WebkitBackdropFilter: 'blur(8px)',
   display: 'flex',
   justifyContent: 'center',
   alignItems: 'center',
@@ -513,14 +525,16 @@ const modalOverlayStyle: React.CSSProperties = {
 };
 
 const modalStyle: React.CSSProperties = {
-  backgroundColor: '#0a0a0a',
-  border: `1px solid ${fusion.border}`,
-  borderRadius: 10,
-  padding: 20,
-  maxWidth: 300,
+  background: 'rgba(14, 14, 18, 0.85)',
+  backdropFilter: fusion.glassBlur,
+  WebkitBackdropFilter: fusion.glassBlur,
+  border: `1px solid ${fusion.glassBorderStrong}`,
+  borderRadius: fusion.radiusLg,
+  padding: 22,
+  maxWidth: 320,
   width: 'calc(100% - 28px)',
   textAlign: 'center',
-  boxShadow: '0 4px 20px rgba(0,0,0,0.4)',
+  boxShadow: fusion.shadowAmbient,
 };
 
 const confirmButtonStyle: React.CSSProperties = {
