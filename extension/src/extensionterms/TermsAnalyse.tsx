@@ -34,15 +34,19 @@ type TermsAnalyseProps = {
   onConsumeInitialScanRequest?: () => void;
 };
 
-const getBadgeColor = (risk: string) => {
-  switch (risk) {
-    case 'high': return '#ef4444';
-    case 'medium': return '#f59e0b';
-    case 'low':
-    case 'none':
-      return '#22c55e';
-    default: return '#6b7280';
-  }
+// Risk palette — unified with web app's RiskCard.jsx so chip colors match
+// the Risk meter bar colors exactly (green / yellow / red).
+type RiskHue = { accent: string; text: string; bg: string; border: string };
+const RISK_PALETTE: Record<string, RiskHue> = {
+  high:   { accent: '#ef4444', text: '#f87171', bg: 'rgba(239,68,68,0.06)',  border: 'rgba(239,68,68,0.18)' },
+  medium: { accent: '#eab308', text: '#fbbf24', bg: 'rgba(234,179,8,0.06)',  border: 'rgba(234,179,8,0.18)' },
+  low:    { accent: '#22c55e', text: '#4ade80', bg: 'rgba(34,197,94,0.06)',  border: 'rgba(34,197,94,0.18)' },
+};
+const riskHue = (risk: string): RiskHue => {
+  const k = (risk || '').toLowerCase();
+  if (k === 'high') return RISK_PALETTE.high;
+  if (k === 'medium') return RISK_PALETTE.medium;
+  return RISK_PALETTE.low;
 };
 
 const riskOrder: Record<string, number> = { high: 0, medium: 1, low: 2, none: 2 };
@@ -624,47 +628,51 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
                 <div style={{ ...riskMeterSub, color: getRiskScoreColor(riskScore).text }}>{getRiskScoreLabel(riskScore)}</div>
               </div>
             )}
-            <div style={summaryBox}>
-              <h3 style={summaryTitle}>Risk breakdown</h3>
-              <div style={summaryStats}>
-                <div style={statItem}>
-                  <div style={{ ...statColor, backgroundColor: getBadgeColor('high') }}></div>
-                  <span>High: {totalHigh}</span>
-                </div>
-                <div style={statItem}>
-                  <div style={{ ...statColor, backgroundColor: getBadgeColor('medium') }}></div>
-                  <span>Medium: {totalMedium}</span>
-                </div>
-                <div style={statItem}>
-                  <div style={{ ...statColor, backgroundColor: getBadgeColor('low') }}></div>
-                  <span>Low: {totalLow}</span>
-                </div>
+            <div style={summaryStats}>
+              <div style={statItem}>
+                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.high.accent }}></div>
+                <span>High <span style={statCount}>{totalHigh}</span></span>
+              </div>
+              <div style={statItem}>
+                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.medium.accent }}></div>
+                <span>Medium <span style={statCount}>{totalMedium}</span></span>
+              </div>
+              <div style={statItem}>
+                <div style={{ ...statColor, backgroundColor: RISK_PALETTE.low.accent }}></div>
+                <span>Low <span style={statCount}>{totalLow}</span></span>
               </div>
             </div>
 
-            {sortedResults.map((entry, index) => (
-              <div key={index} style={riskItemContainer}>
-                <div
-                  style={riskItemHeader}
-                  onClick={() => setExpandedSummary(expandedSummary === entry.lineSummary ? null : entry.lineSummary)}
-                >
-                  <div style={{ ...riskBadge, backgroundColor: getBadgeColor(entry.risktype) }}>
+            {sortedResults.map((entry, index) => {
+              const hue = riskHue(entry.risktype === 'none' ? 'low' : entry.risktype);
+              const isOpen = expandedSummary === entry.lineSummary;
+              return (
+              <div
+                key={index}
+                style={{
+                  ...riskItemRow,
+                  borderLeft: `3px solid ${hue.accent}`,
+                  background: hue.bg,
+                }}
+                onClick={() => setExpandedSummary(isOpen ? null : entry.lineSummary)}
+              >
+                <div style={riskItemHeader}>
+                  <span style={{ ...riskBadgePill, color: hue.text, background: `${hue.accent}1F`, border: `1px solid ${hue.border}` }}>
                     {(entry.risktype === 'none' ? 'low' : entry.risktype).toUpperCase()}
-                  </div>
+                  </span>
                   <p style={riskSummaryText}>{entry.lineSummary}</p>
-                  <span style={arrowStyle(expandedSummary === entry.lineSummary)} aria-hidden="true">
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none">
+                  <span style={arrowStyle(isOpen)} aria-hidden="true">
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
                       <path d="M9 18l6-6-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
                     </svg>
                   </span>
                 </div>
-                {expandedSummary === entry.lineSummary && (
-                  <div style={riskReasonBox}>
-                    <p style={riskReasonText}>{entry.riskReason}</p>
-                  </div>
+                {isOpen && entry.riskReason && (
+                  <p style={{ ...riskReasonText, borderTop: `1px dashed ${hue.border}` }}>{entry.riskReason}</p>
                 )}
               </div>
-            ))}
+              );
+            })}
             <button type="button" data-distil-btn="secondary" onClick={handleClear} style={{ ...secondaryButton, marginTop: 12 }}>
               New scan
             </button>
@@ -778,8 +786,9 @@ const riskMeterTrackGradient: React.CSSProperties = {
   position: 'absolute',
   inset: 0,
   borderRadius: 5,
-  background: 'linear-gradient(90deg, #22c55e 0%, #22c55e 32%, #eab308 32%, #eab308 52%, #f59e0b 52%, #f59e0b 72%, #ef4444 72%, #ef4444 100%)',
-  opacity: 0.85,
+  // 3 zones matching the chip palette: green ≤32, yellow 32–72, red >72.
+  background: 'linear-gradient(90deg, #22c55e 0%, #22c55e 32%, #eab308 32%, #eab308 72%, #ef4444 72%, #ef4444 100%)',
+  opacity: 0.9,
 };
 
 const riskMeterPointer: React.CSSProperties = {
@@ -1114,63 +1123,56 @@ const resultsContainer: React.CSSProperties = {
   gap: fusion.space3,
 };
 
-const summaryBox: React.CSSProperties = {
-  padding: 12,
-  backgroundColor: 'rgba(255, 255, 255, 0.03)',
-  borderRadius: 8,
-  border: `1px solid ${fusion.border}`,
-};
-
-const summaryTitle: React.CSSProperties = {
-  fontSize: 13,
-  fontWeight: 600,
-  color: fusion.text,
-  marginBottom: 8,
-};
-
 const summaryStats: React.CSSProperties = {
   display: 'flex',
-  justifyContent: 'space-around',
+  justifyContent: 'space-between',
+  gap: 10,
+  padding: '2px 2px 6px',
+  borderBottom: `1px dashed ${fusion.border}`,
+  marginBottom: 2,
 };
 
 const statItem: React.CSSProperties = {
-  display: 'flex',
+  display: 'inline-flex',
   alignItems: 'center',
   gap: 6,
-  fontSize: 12,
+  fontSize: 11,
   color: fusion.textMuted,
 };
 
+const statCount: React.CSSProperties = {
+  color: fusion.text,
+  fontWeight: 700,
+  marginLeft: 2,
+};
+
 const statColor: React.CSSProperties = {
-  width: 8,
-  height: 8,
+  width: 7,
+  height: 7,
   borderRadius: '50%',
   flexShrink: 0,
 };
 
-const riskItemContainer: React.CSSProperties = {
-  backgroundColor: 'rgba(255, 255, 255, 0.04)',
-  borderRadius: 8,
-  border: `1px solid ${fusion.border}`,
-  overflow: 'hidden',
+const riskItemRow: React.CSSProperties = {
+  borderRadius: 6,
+  padding: '8px 10px 8px 10px',
   cursor: 'pointer',
   transition: fusion.transition,
 };
 
 const riskItemHeader: React.CSSProperties = {
   display: 'flex',
-  alignItems: 'flex-start',
-  padding: '10px 12px',
+  alignItems: 'center',
   gap: 8,
 };
 
-const riskBadge: React.CSSProperties = {
-  padding: '3px 6px',
+const riskBadgePill: React.CSSProperties = {
+  padding: '2px 7px',
   borderRadius: 4,
-  color: 'white',
   fontSize: 9,
   fontWeight: 700,
   textTransform: 'uppercase',
+  letterSpacing: '0.06em',
   minWidth: 42,
   textAlign: 'center',
   flexShrink: 0,
@@ -1229,15 +1231,10 @@ function renderMaskedSegments(text: string): React.ReactNode {
   return parts;
 }
 
-const riskReasonBox: React.CSSProperties = {
-  padding: '8px 12px',
-  backgroundColor: fusion.bgInput,
-  borderTop: `1px dashed ${fusion.border}`,
-};
-
 const riskReasonText: React.CSSProperties = {
   fontSize: 11,
   color: fusion.textMuted,
-  margin: 0,
-  lineHeight: 1.4,
+  margin: '6px 0 0',
+  paddingTop: 6,
+  lineHeight: 1.45,
 };

@@ -29,18 +29,17 @@ export function computeRiskScore(entries: RiskEntry[] | null): number | null {
 }
 
 /** Lenient bands for labels: wider "Low" and "Moderate" so we don’t scare on small issues. */
-export function getRiskScoreLabel(score: number): 'Low risk' | 'Moderate' | 'Elevated' | 'High risk' {
+export function getRiskScoreLabel(score: number): 'Low risk' | 'Moderate' | 'High risk' {
   if (score <= 32) return 'Low risk';
-  if (score <= 52) return 'Moderate';
-  if (score <= 72) return 'Elevated';
+  if (score <= 72) return 'Moderate';
   return 'High risk';
 }
 
 export function getRiskScoreColor(score: number): { bg: string; border: string; text: string; zone: string } {
-  if (score <= 32) return { bg: 'rgba(34, 197, 94, 0.18)', border: 'rgba(34, 197, 94, 0.45)', text: '#4ade80', zone: 'low' };
-  if (score <= 52) return { bg: 'rgba(234, 179, 8, 0.18)', border: 'rgba(234, 179, 8, 0.45)', text: '#facc15', zone: 'moderate' };
-  if (score <= 72) return { bg: 'rgba(245, 158, 11, 0.18)', border: 'rgba(245, 158, 11, 0.45)', text: '#fbbf24', zone: 'elevated' };
-  return { bg: 'rgba(239, 68, 68, 0.18)', border: 'rgba(239, 68, 68, 0.45)', text: '#f87171', zone: 'high' };
+  // Unified with the chip palette — 3 hues (green / yellow / red) across all bands.
+  if (score <= 32) return { bg: 'rgba(34, 197, 94, 0.10)',  border: 'rgba(34, 197, 94, 0.35)',  text: '#4ade80', zone: 'low' };
+  if (score <= 72) return { bg: 'rgba(234, 179, 8, 0.10)',  border: 'rgba(234, 179, 8, 0.35)',  text: '#fbbf24', zone: 'moderate' };
+  return { bg: 'rgba(239, 68, 68, 0.10)', border: 'rgba(239, 68, 68, 0.35)', text: '#f87171', zone: 'high' };
 }
 
 /** Message sent from popup/side-panel or background to content script when analysis completes */
