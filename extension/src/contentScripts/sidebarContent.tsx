@@ -314,6 +314,11 @@ import React from 'react';
 import ReactDOM from 'react-dom/client';
 import PageSidebar from './PageSidebar';
 import FloatingBubble from './FloatingBubble';
+import { installSignupWatcher } from './signupWatcher';
+
+// Watch for sign-up forms, cookie banners, and OAuth consent screens so
+// we can surface the "Save & watch" toast before the user agrees.
+try { installSignupWatcher(); } catch { /* never break host page */ }
 
 const ROOT_ID = 'distil-sidebar-root';
 const SHADOW_HOST_ID = 'distil-shadow-host';

@@ -202,14 +202,116 @@ function onFormSubmitted(ev: SubmitEvent | Event): void {
 }
 
 export function installSignupWatcher(): void {
-  if (!isSafeHost()) return;
   if (isDistilHost()) return;
+  // OAuth consent watcher runs on IDP hosts (Google/Apple/MSFT/Facebook).
+  // It handles the case where the target app is a third party whose T&C
+  // links are visible on the consent screen — we surface them before the
+  // user clicks Continue.
+  installOAuthConsentWatcher();
+  if (!isSafeHost()) return;
   try {
     // Capture phase so we run even if the site's handler calls stopPropagation later.
     document.addEventListener('submit', onFormSubmitted, true);
     installCookieBannerWatcher();
   } catch {
     // ignore
+  }
+}
+
+// ────────────────────── OAuth consent-screen watcher ──────────────────────
+
+const OAUTH_CONSENT_URL_RE = /(\/o\/oauth2\/|\/signin\/oauth|\/oauth2\/v2\/auth|\/auth\/authorize|\/oauth\/authorize|\/dialog\/oauth|\/common\/oauth2)/i;
+const CONSENT_HEADING_RE = /sign\s*in\s*to\s+([a-z0-9.-]+\.[a-z]{2,})/i;
+const TOS_TEXT_RE = /terms\s*of\s*service|terms\s*of\s*use|terms\s*&?\s*conditions|\bterms\b/i;
+const PRIVACY_TEXT_RE = /privacy\s*policy|privacy\s*notice|\bprivacy\b/i;
+
+function hostOfUrl(u: string): string | null {
+  try { return new URL(u, window.location.href).hostname.toLowerCase(); } catch { return null; }
+}
+
+function isThirdPartyHost(host: string | null): boolean {
+  if (!host) return false;
+  const self = window.location.hostname.toLowerCase();
+  if (host === self) return false;
+  // Strip cross-subdomain variants (google.com vs accounts.google.com).
+  const rootSelf = self.split('.').slice(-2).join('.');
+  const rootOther = host.split('.').slice(-2).join('.');
+  return rootOther !== rootSelf;
+}
+
+function findConsentLinks(): { tosUrl?: string; privacyUrl?: string; targetHost?: string } {
+  const anchors = Array.from(document.querySelectorAll('a[href]')) as HTMLAnchorElement[];
+  let tosUrl: string | undefined;
+  let privacyUrl: string | undefined;
+  const hostSeen = new Map<string, number>();
+
+  for (const a of anchors) {
+    const href = a.getAttribute('href') || '';
+    if (!href || href.startsWith('#') || href.startsWith('javascript:')) continue;
+    const text = (a.textContent || '').trim();
+    if (!text) continue;
+    const host = hostOfUrl(href);
+    if (!isThirdPartyHost(host)) continue;
+    if (!tosUrl && TOS_TEXT_RE.test(text) && !PRIVACY_TEXT_RE.test(text)) tosUrl = new URL(href, window.location.href).toString();
+    if (!privacyUrl && PRIVACY_TEXT_RE.test(text) && !TOS_TEXT_RE.test(text)) privacyUrl = new URL(href, window.location.href).toString();
+    if (host) hostSeen.set(host, (hostSeen.get(host) || 0) + 1);
+  }
+
+  // Most-linked third-party host is almost certainly the target app.
+  let targetHost: string | undefined;
+  if (hostSeen.size) {
+    targetHost = [...hostSeen.entries()].sort((a, b) => b[1] - a[1])[0][0];
+  }
+
+  // Heading fallback: "Sign in to groq.com" / "Sign in to continue to Groq"
+  if (!targetHost) {
+    const text = (document.body.innerText || '').slice(0, 4000);
+    const m = text.match(CONSENT_HEADING_RE);
+    if (m) targetHost = m[1].toLowerCase();
+  }
+
+  return { tosUrl, privacyUrl, targetHost };
+}
+
+function maybeShowConsentToast(): void {
+  if (document.getElementById(TOAST_ID)) return;
+  const { tosUrl, privacyUrl, targetHost } = findConsentLinks();
+  const url = tosUrl || privacyUrl;
+  if (!url || !targetHost) return;
+
+  showToast({
+    hostname: targetHost,
+    url,
+    title: `${targetHost} — Terms & Privacy`,
+    onSave: () => sendSaveRequest({
+      url,
+      title: `${targetHost} — ${tosUrl ? 'Terms of Service' : 'Privacy Policy'}`,
+      pageUrl: window.location.href,
+    }),
+  });
+}
+
+function installOAuthConsentWatcher(): void {
+  try {
+    if (!OAUTH_CONSENT_URL_RE.test(window.location.pathname + window.location.search)) return;
+
+    const tryOnce = () => { try { maybeShowConsentToast(); } catch { /* ignore */ } };
+
+    // Retry a few times — consent screens often render content after an RPC.
+    setTimeout(tryOnce, 400);
+    setTimeout(tryOnce, 1200);
+    setTimeout(tryOnce, 2400);
+
+    // Also observe in case the DOM changes (e.g. after the profile picker).
+    const obs = new MutationObserver(() => {
+      if (document.getElementById(TOAST_ID)) return;
+      tryOnce();
+    });
+    obs.observe(document.documentElement, { childList: true, subtree: true });
+    // Safety: stop observing after 30 s.
+    setTimeout(() => obs.disconnect(), 30_000);
+  } catch {
+    // never break OAuth flow
   }
 }
 
