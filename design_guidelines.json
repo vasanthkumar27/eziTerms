@@ -1,0 +1,137 @@
+{
+  "project_context": {
+    "app_name": "Distil",
+    "app_type": "chrome_extension_sidepanel",
+    "archetype": "High-End Security Tech (Vercel/Arc vibe)",
+    "theme_mode": "dark",
+    "constraints": [
+      "Width 320px-420px",
+      "React inline styles only (React.CSSProperties), NO Tailwind",
+      "System fonts only",
+      "No nested card-in-card layouts"
+    ]
+  },
+  "theme_and_archetype": {
+    "domain": "Legal/Security Extension",
+    "archetype": "Jewel & Luxury / Swiss High-Contrast (Arc/Linear Vibe)",
+    "theme": "Dark",
+    "core_philosophy": "Professional glassmorphism. Deep space background with subtle neon ambient glows. Single-layer glass cards. No nested containers. Flat interactive rows."
+  },
+  "fusionTheme_tokens": {
+    "colors": {
+      "backgroundBase": "#08080A",
+      "ambientGlowPrimary": "rgba(6, 182, 212, 0.15)",
+      "ambientGlowSecondary": "rgba(79, 70, 229, 0.1)",
+      "surfaceGlass": "rgba(255, 255, 255, 0.03)",
+      "surfaceGlassHover": "rgba(255, 255, 255, 0.06)",
+      "borderGlass": "rgba(255, 255, 255, 0.08)",
+      "borderGlassStrong": "rgba(255, 255, 255, 0.15)",
+      "textPrimary": "#FAFAFA",
+      "textSecondary": "#A1A1AA",
+      "textMuted": "#71717A",
+      "brandAccent": "#06B6D4",
+      "brandAccentGlow": "rgba(6, 182, 212, 0.4)",
+      "risk": {
+        "high": { "base": "#ef4444", "light": "#f87171", "bg": "rgba(239, 68, 68, 0.1)" },
+        "medium": { "base": "#eab308", "light": "#fbbf24", "bg": "rgba(234, 179, 8, 0.1)" },
+        "low": { "base": "#22c55e", "light": "#4ade80", "bg": "rgba(34, 197, 94, 0.1)" }
+      }
+    },
+    "effects": {
+      "glassBlur": "blur(20px)",
+      "shadowAmbient": "0 8px 32px rgba(0, 0, 0, 0.4)",
+      "shadowDrop": "0 4px 12px rgba(0, 0, 0, 0.2)"
+    },
+    "typography": {
+      "fontFamily": "-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif",
+      "headingWeight": 600,
+      "bodyWeight": 400,
+      "letterSpacing": {
+        "tight": "-0.02em",
+        "overline": "0.1em"
+      }
+    }
+  },
+  "depth_hierarchy": {
+    "z0_background": "Solid #08080A with radial gradients (fixed position, Cyan top-right, Indigo bottom-left, heavily blurred).",
+    "z10_base_content": "Flat lists (Findings rows), text elements resting directly on the glowing background.",
+    "z20_glass_surfaces": "Risk meter card, Modals, Sticky Header bar. Uses backdrop-filter: blur(20px) and inner 1px border.",
+    "z30_floating_elements": "Dropdowns, Tooltips, Chatbot bubble, Primary action buttons.",
+    "z40_overlays": "Logout/Login modal backdrops (rgba(0,0,0,0.6) + blur(4px))."
+  },
+  "component_specs": {
+    "header": {
+      "layout": "Flex space-between, align-items center, padding 16px.",
+      "style": "Glass surface (rgba(255,255,255,0.02), backdropFilter: blur(12px)), sticky top, borderBottom: 1px solid rgba(255,255,255,0.08).",
+      "elements": "Logo (brandAccent color), Subtitle ('Terms & risk', textSecondary, 12px), Logout icon (hover: textPrimary)."
+    },
+    "risk_meter_card": {
+      "layout": "Flex column, gap 16px, padding 20px.",
+      "style": "Glass surface token. borderRadius: 16px. boxShadow: ambient. No internal nested cards.",
+      "meter_bar": "Height 8px, borderRadius 4px, background: linear-gradient(90deg, #22c55e, #eab308, #ef4444).",
+      "pointer": "Absolute positioned triangle or vertical pill (bg: #FAFAFA, shadow-drop), smooth transition on left%.",
+      "score_display": "Large numeric (textPrimary, 36px, letterSpacing tight) + Label (14px, colored by risk level base)."
+    },
+    "risk_breakdown_stats": {
+      "layout": "Flex row, justify-content space-between, marginTop 12px.",
+      "style": "Flat, no background.",
+      "items": "3 columns. Number (18px, textPrimary) + Label (12px, textSecondary). Left border: 2px solid risk color base. PaddingLeft: 6px."
+    },
+    "finding_row": {
+      "layout": "Flex row, gap 12px, padding 12px 16px, alignItems flex-start. DO NOT nest inside another card.",
+      "style": "Transparent background, hover: rgba(255,255,255,0.03). borderBottom: 1px solid rgba(255,255,255,0.04).",
+      "accent_border": "Left border 3px solid risk color base (absolute or flex item left edge).",
+      "chip": "Uppercase, fontSize 10px, letterSpacing 0.1em, background: risk bg (10% opac), color: risk light. borderRadius 4px, padding 2px 6px.",
+      "summary": "fontSize 14px, color textPrimary, lineHeight 1.4.",
+      "expand_chevron": "16px icon, color textSecondary, transition: transform 0.2s."
+    },
+    "buttons": {
+      "primary": {
+        "style": "background: #FAFAFA, color: #08080A. borderRadius: 8px, padding 10px 16px, fontWeight: 500.",
+        "hover": "transform: scale(0.98), opacity: 0.9. transition: all 0.2s ease."
+      },
+      "secondary": {
+        "style": "background: rgba(255,255,255,0.05), border: 1px solid rgba(255,255,255,0.1), color: #FAFAFA. borderRadius: 8px.",
+        "hover": "background: rgba(255,255,255,0.08)."
+      }
+    },
+    "inputs_and_upload": {
+      "input": "background: rgba(0,0,0,0.2), border: 1px solid borderGlass. focus: border brandAccent, boxShadow 0 0 0 2px brandAccentGlow. padding 12px, borderRadius 8px.",
+      "drag_drop": "border: 1px dashed borderGlassStrong. background: rgba(255,255,255,0.01). hover: border brandAccent. Flex center, column, gap 8px."
+    },
+    "loader": {
+      "style": "3-ring orbital. 3 absolute div rings with borderTop/borderLeft brandAccent. Different animation durations (1s, 1.5s, 2s) linear infinite.",
+      "text": "'Analysing...' textSecondary, fontSize 13px, pulsing opacity."
+    },
+    "chat_assistant": {
+      "trigger": "Floating button bottom-right. Glass surface, circular, 48x48. Icon inside. boxShadow: ambient.",
+      "bubble": "Glass card, maxWidth 85%. User message: rgba(255,255,255,0.1) flat. Anee message: transparent, textPrimary."
+    }
+  },
+  "motion_and_keyframes": {
+    "css_in_js_animations": {
+      "spin": "keyframes { from { transform: rotate(0deg); } to { transform: rotate(360deg); } }",
+      "pulse": "keyframes { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }",
+      "slideUpFade": "keyframes { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }"
+    },
+    "interactions": {
+      "finding_stagger": "Apply animation: slideUpFade 0.3s ease-out forwards. Use style={{ animationDelay: 'calc(var(--index) * 0.05s)' }} for stagger effect.",
+      "meter_pointer": "transition: left 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) /* Spring-like bounce */"
+    }
+  },
+  "testing_guidelines": {
+    "rules": [
+      "All interactive elements MUST use data-testid attribute.",
+      "Format: kebab-case, role-based."
+    ],
+    "examples": {
+      "header_logout": "data-testid='header-logout-button'",
+      "risk_meter": "data-testid='risk-meter-score'",
+      "finding_row": "data-testid='finding-row-{id}'",
+      "finding_expand": "data-testid='finding-expand-button-{id}'",
+      "scan_button": "data-testid='scan-page-button'",
+      "chat_trigger": "data-testid='chat-assistant-trigger'",
+      "file_upload": "data-testid='file-upload-input'"
+    }
+  }
+}
