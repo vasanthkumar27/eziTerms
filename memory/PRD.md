@@ -206,3 +206,25 @@ New `services/url_fetcher.py` (httpx + BeautifulSoup) + `/api/fetch-url` endpoin
 - Grab `RESEND_API_KEY` whenever you want real emails (still dry-run-logging right now).
 - Real-Chrome smoke test of the cookie-banner toast on common sites (nytimes.com, bbc.com, any OneTrust-based site).
 - Optional: add the watchlist + history views inside the extension sidepanel for parity with the web app.
+
+## Update — Masking flow fixed + prettier animation (2026-04-17)
+
+### Bug (user-reported): "Continue with masked text" wasn't working
+Two issues stacked on top of each other:
+
+1. **Wrong Haiku model ID.** `claude-haiku-4-5-20251001` doesn't exist in LiteLLM's Anthropic mapping, so requests silently routed through LiteLLM's OpenAI-compatible fallback path to the public Emergent endpoint, which returns 403 `FREE_USER_EXTERNAL_ACCESS_DENIED` for free-tier keys. My earlier "Haiku speed test" only looked fast because it hit the cache left over from Sonnet. **Fix**: `backend/.env` now uses `ANTHROPIC_MODEL=claude-haiku-4-5` (no date suffix). Verified fresh call returns in **8.1 s** (~2× faster than Sonnet, real this time) and the live masking-continue path now returns a 7-item 87.9-score analysis cleanly.
+
+2. **Duplicate-tab creation.** When the empty-pane `TermsAnalyse` finished an upload-with-masking, its custom `setAnalysisResult` wrapper called `addOrUpdateTab(currentPageUrl || '', ...)` — which fell back to fabricating a `scan:<timestamp>` tab — while `onAnalysisComplete` simultaneously created the real `upload:<filename>` tab. Result: two tabs side by side, masking result displayed in one, user confused. **Fix**: wrapper is now a no-op; `onAnalysisComplete` is the single source of truth for tab creation. Verified live — masking flow now produces exactly one `upload:tc.txt` tab, no `scan:` phantom.
+
+### Masking animation polish
+Replaced the plain-text masked preview with an animated placeholder-token renderer:
+- `MASK_TOKEN_RE` parses Presidio-style `<PERSON>`, `<EMAIL_ADDRESS>`, `<PHONE_NUMBER>`, `<URL>` etc.
+- Each placeholder renders as a pill-shaped badge with readable label (e.g. `EMAIL ADDRESS`) in monospace.
+- Badges fade-in with a **400ms blur-lift** and a continuous **2s soft-blue pulse** (`@keyframes distilMaskPulse` + `distilMaskGlow`), staggered by 60 ms per placeholder (capped at 1.2 s total).
+- The whole modal body uses a 250 ms fade-in. Screenshot shows a clean, confidence-inspiring preview.
+
+### Files touched
+- `backend/.env` — model id.
+- `extension/src/extensionmaster/ExtensionMainContent.tsx` — empty-pane wrapper no-op.
+- `extension/src/extensionterms/TermsAnalyse.tsx` — animated `renderMaskedSegments` + keyframes injected into the modal portal.
+- Rebuilt `extension/dist/` + `dist.zip`.

@@ -408,6 +408,36 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
     maskingPending && !loading && typeof document !== 'undefined'
       ? createPortal(
           <div style={maskingOverlayStyle} role="dialog" aria-modal="true" aria-label="Mask">
+            <style>{`
+              @keyframes distilMaskPulse {
+                0%   { opacity: 0; transform: translateY(2px) scale(0.96); filter: blur(4px); }
+                60%  { opacity: 1; transform: translateY(0) scale(1.02); filter: blur(0); }
+                100% { opacity: 1; transform: translateY(0) scale(1); }
+              }
+              @keyframes distilMaskGlow {
+                0%,100% { box-shadow: 0 0 0 0 rgba(50,145,255,0.0); }
+                50%     { box-shadow: 0 0 0 4px rgba(50,145,255,0.18); }
+              }
+              .distil-mask-token {
+                display: inline-block;
+                padding: 1px 8px;
+                margin: 0 2px;
+                border-radius: 6px;
+                background: rgba(50,145,255,0.14);
+                color: #7fb5ff;
+                border: 1px solid rgba(50,145,255,0.32);
+                font-size: 0.78em;
+                font-weight: 600;
+                letter-spacing: 0.02em;
+                font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                animation: distilMaskPulse 400ms ease-out both, distilMaskGlow 2s ease-in-out infinite;
+              }
+              .distil-mask-body {
+                animation: fadeIn 250ms ease-out both;
+                line-height: 1.65;
+              }
+              @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+            `}</style>
             <div style={maskingModalShell} onClick={(e) => e.stopPropagation()}>
               <div style={maskingModalHeader}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
@@ -422,7 +452,9 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
                 <span style={maskingPreviewTag}>Mask enabled</span>
                 <span style={maskingPreviewTagNote}>Review and continue if this looks right</span>
               </div>
-              <div style={maskedTextPreviewModal}>{maskingPending.maskedText}</div>
+              <div style={maskedTextPreviewModal} className="distil-mask-body">
+                {renderMaskedSegments(maskingPending.maskedText)}
+              </div>
               <div style={maskingModalFooter}>
                 <button type="button" data-distil-btn="secondary" onClick={handleMaskingCancel} style={secondaryButton}>
                   Cancel upload
@@ -1163,6 +1195,39 @@ const arrowStyle = (isExpanded: boolean): React.CSSProperties => ({
   color: fusion.textMuted,
   flexShrink: 0,
 });
+
+// Matches Presidio-style placeholders (<PERSON>, <EMAIL_ADDRESS>, <PHONE_NUMBER>, etc.)
+// plus bracket-style masks ([REDACTED], [NAME]).
+const MASK_TOKEN_RE = /(<[A-Z][A-Z0-9_]{1,}>|\[[A-Z][A-Z0-9_ ]{2,}\])/g;
+
+function renderMaskedSegments(text: string): React.ReactNode {
+  if (!text) return null;
+  const parts: React.ReactNode[] = [];
+  let lastIndex = 0;
+  let match: RegExpExecArray | null;
+  let tokenIndex = 0;
+  MASK_TOKEN_RE.lastIndex = 0;
+  while ((match = MASK_TOKEN_RE.exec(text)) !== null) {
+    if (match.index > lastIndex) {
+      parts.push(text.slice(lastIndex, match.index));
+    }
+    const label = match[0].replace(/[<>\[\]]/g, '').replace(/_/g, ' ');
+    parts.push(
+      <span
+        key={`mask-${tokenIndex}-${match.index}`}
+        className="distil-mask-token"
+        style={{ animationDelay: `${Math.min(tokenIndex * 60, 1200)}ms` }}
+        title={`Redacted: ${label}`}
+      >
+        {label}
+      </span>
+    );
+    lastIndex = match.index + match[0].length;
+    tokenIndex += 1;
+  }
+  if (lastIndex < text.length) parts.push(text.slice(lastIndex));
+  return parts;
+}
 
 const riskReasonBox: React.CSSProperties = {
   padding: '8px 12px',

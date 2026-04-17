@@ -325,12 +325,10 @@ export const ExtensionMainContent: React.FC<ExtensionMainContentProps> = ({
               termsText={null}
               setTermsText={() => {}}
               analysisResult={null}
-              /* Real setter: promote scan result to a tab even if the URL is empty. */
-              setAnalysisResult={(r) => {
-                if (Array.isArray(r) && r.length > 0) {
-                  addOrUpdateTab(currentPageUrl ?? '', { termsText: '', analysisResult: r });
-                }
-              }}
+              /* No-op: onAnalysisComplete already promotes the result into the
+                 correct tab via addOrUpdateTab. A custom setter here would
+                 create a duplicate "scan:<ts>" tab and confuse the user. */
+              setAnalysisResult={() => {}}
               analysisError={displayError}
               setAnalysisError={setAnalysisErrorLocal}
               loading={loading}
