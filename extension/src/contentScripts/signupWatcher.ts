@@ -102,6 +102,7 @@ function showToast(opts: {
   url: string;
   title: string;
   onSave: () => void;
+  onAnalyze?: () => void;
 }): void {
   dismissToast();
   const wrapper = document.createElement('div');
@@ -138,17 +139,23 @@ function showToast(opts: {
 
   const safeTitle = opts.title.replace(/[<>]/g, '');
   const safeHost = opts.hostname.replace(/[<>]/g, '');
+  const analyzeBtnHtml = opts.onAnalyze
+    ? `<button id="distil-toast-analyze" data-testid="distil-toast-analyze" style="background:#06B6D4;color:#061214;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Analyze</button>`
+    : '';
   wrapper.innerHTML = `
     <div style="display:flex;gap:10px;align-items:flex-start">
-      <div style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(50,145,255,0.18);border:1px solid rgba(50,145,255,0.35);display:flex;align-items:center;justify-content:center;color:#3291ff;font-weight:700;font-size:13px">D</div>
+      <div style="flex-shrink:0;width:28px;height:28px;border-radius:8px;background:rgba(6,182,212,0.18);border:1px solid rgba(6,182,212,0.35);display:flex;align-items:center;justify-content:center;color:#06B6D4;font-weight:700;font-size:13px">D</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;color:#fff;margin-bottom:2px">Agreeing to terms at ${safeHost}?</div>
+        <div style="font-weight:600;color:#fff;margin-bottom:2px">${opts.onAnalyze ? `Analyze ${safeHost}'s terms?` : `Agreeing to terms at ${safeHost}?`}</div>
         <div style="color:rgba(255,255,255,0.72);margin-bottom:10px">
-          We found the T&amp;C for this page. Save it to your Distil watchlist and we'll email you if it ever changes.
+          ${opts.onAnalyze
+            ? `We found the Terms & Privacy links for this consent screen. Analyze the risks or save it to your watchlist.`
+            : `We found the T&amp;C for this page. Save it to your Distil watchlist and we'll email you if it ever changes.`}
         </div>
-        <div style="display:flex;gap:6px;justify-content:flex-end">
+        <div style="display:flex;gap:6px;justify-content:flex-end;flex-wrap:wrap">
           <button id="distil-toast-dismiss" style="background:transparent;color:rgba(255,255,255,0.6);border:1px solid rgba(255,255,255,0.12);border-radius:8px;padding:6px 12px;cursor:pointer;font:inherit">Not now</button>
-          <button id="distil-toast-save" data-testid="distil-toast-save" style="background:#fff;color:#000;border:none;border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Save &amp; watch</button>
+          <button id="distil-toast-save" data-testid="distil-toast-save" style="background:rgba(255,255,255,0.08);color:#fff;border:1px solid rgba(255,255,255,0.14);border-radius:8px;padding:6px 14px;cursor:pointer;font:inherit;font-weight:600">Save &amp; watch</button>
+          ${analyzeBtnHtml}
         </div>
         <div style="margin-top:8px;font-size:11.5px;color:rgba(255,255,255,0.45);overflow:hidden;text-overflow:ellipsis;white-space:nowrap" title="${opts.url}">${opts.url}</div>
       </div>
@@ -163,8 +170,16 @@ function showToast(opts: {
     opts.onSave();
     close();
   });
+  if (opts.onAnalyze) {
+    wrapper.querySelector('#distil-toast-analyze')?.addEventListener('click', () => {
+      opts.onAnalyze!();
+      close();
+    });
+  }
   // auto-dismiss after 25s
   setTimeout(close, 25000);
+  // Prevent unused-variable TS warning for safeTitle (kept for future use).
+  void safeTitle;
 }
 
 function sendSaveRequest(detail: { url: string; title: string; pageUrl: string }) {
@@ -288,6 +303,22 @@ function maybeShowConsentToast(): void {
       title: `${targetHost} — ${tosUrl ? 'Terms of Service' : 'Privacy Policy'}`,
       pageUrl: window.location.href,
     }),
+    onAnalyze: () => {
+      // Open the side panel in URL-fetch mode: it will fetch the target
+      // site's T&C from `url` and analyse it, instead of trying to parse
+      // the identity provider's consent UI (which always rejects as non-T&C).
+      try {
+        const ext: any = typeof chrome !== 'undefined' ? chrome : null;
+        if (!ext?.runtime?.sendMessage) return;
+        const pending = { text: '', url, mode: 'url' as const };
+        const doOpen = () => ext.runtime.sendMessage({ type: 'DISTIL_OPEN_AND_ANALYZE' }).catch(() => {});
+        if (ext.storage?.session?.set) {
+          ext.storage.session.set({ distil_pending_analyze: pending }, doOpen);
+        } else {
+          doOpen();
+        }
+      } catch { /* ignore */ }
+    },
   });
 }
 

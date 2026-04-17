@@ -60,6 +60,10 @@ const PageSidebar: React.FC = () => {
 
     const runDetection = async (): Promise<boolean> => {
       try {
+        // Skip on OAuth consent screens — the OAuth toast (signupWatcher)
+        // handles these, and the page text here is the identity provider's
+        // UI chrome, not the target app's T&C.
+        if (/\/(o\/oauth2|signin\/oauth|oauth2\/v2\/auth|auth\/authorize|oauth\/authorize|dialog\/oauth|common\/oauth2)/i.test(url)) return false;
         const extEnabled = await getExtensionEnabled();
         if (!extEnabled) return false; // Extension is off
         const autoEnabled = await getAutoAnalyseEnabled();

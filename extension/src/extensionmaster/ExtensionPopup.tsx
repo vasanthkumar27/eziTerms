@@ -175,7 +175,8 @@ const ExtensionPopup: React.FC = () => {
     chrome.storage.session.get(['distil_pending_analyze'], (result) => {
       const pending = result?.distil_pending_analyze;
       if (pending && typeof pending.text === 'string' && typeof pending.url === 'string') {
-        setPendingScanRequest({ text: pending.text, url: pending.url });
+        const mode = pending.mode === 'url' ? 'url' : 'text';
+        setPendingScanRequest({ text: pending.text, url: pending.url, mode });
         chrome.storage.session.remove(['distil_pending_analyze']);
       }
     });
@@ -208,7 +209,7 @@ const ExtensionPopup: React.FC = () => {
     };
   }, [readPendingAnalyze]);
 
-  const [pendingScanRequest, setPendingScanRequest] = useState<{ text: string; url: string } | null>(null);
+  const [pendingScanRequest, setPendingScanRequest] = useState<{ text: string; url: string; mode?: 'text' | 'url' } | null>(null);
 
   useEffect(() => {
     const listener = (

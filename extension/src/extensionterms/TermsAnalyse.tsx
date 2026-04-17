@@ -30,7 +30,7 @@ type TermsAnalyseProps = {
   pageUrl?: string | null;
   onAnalysisComplete?: (pageUrl: string, result: RiskEntry[], termsText: string) => void;
   /** When set, run analysis with this text/url once (e.g. after "Yes, analyse" on T&C detection). */
-  initialScanRequest?: { text: string; url: string } | null;
+  initialScanRequest?: { text: string; url: string; mode?: 'text' | 'url' } | null;
   onConsumeInitialScanRequest?: () => void;
 };
 
@@ -106,11 +106,86 @@ const TermsAnalyse: React.FC<TermsAnalyseProps> = ({
   }, [setTermsText]);
 
   useEffect(() => {
-    if (!initialScanRequest?.text?.trim() || initialScanRequest.text.length < 100 || isAnalyzingRef.current) return;
-    const req = { text: initialScanRequest.text, url: initialScanRequest.url };
+    if (isAnalyzingRef.current || !initialScanRequest) return;
+    const url = initialScanRequest.url || '';
+    const text = initialScanRequest.text || '';
+    const isUrlMode = initialScanRequest.mode === 'url' && !!url;
+    if (!isUrlMode && (!text.trim() || text.length < 100)) return;
     onConsumeInitialScanRequest?.();
-    analyzeText(req.text, req.url);
-  }, [initialScanRequest?.url, initialScanRequest?.text]);
+    if (isUrlMode) {
+      analyzeUrl(url);
+    } else {
+      analyzeText(text, url);
+    }
+  }, [initialScanRequest?.url, initialScanRequest?.text, initialScanRequest?.mode]);
+
+  const runAnalysisWithUrl = async (url: string) => {
+    let accessToken = await getAccessToken();
+    const refreshToken = await getRefreshToken();
+    if (!accessToken && !refreshToken) {
+      setAnalysisError('Please log in to analyze terms.');
+      return;
+    }
+    const body = { url };
+    let resp = await fetch(API_ENDPOINTS.AWS_BASE_API_URL + API_ENDPOINTS.ANALYSE_TERMS, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+      body: JSON.stringify(body),
+    });
+    if (resp.status === 401 && refreshToken) {
+      const refreshResp = await fetch(API_ENDPOINTS.AWS_BASE_API_URL + API_ENDPOINTS.REFRESH_TOKEN, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+      if (!refreshResp.ok) throw new Error('Session expired, please login again.');
+      const refreshData = await refreshResp.json();
+      await setTokens(refreshData.access, refreshToken);
+      accessToken = refreshData.access;
+      resp = await fetch(API_ENDPOINTS.AWS_BASE_API_URL + API_ENDPOINTS.ANALYSE_TERMS, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${accessToken}` },
+        body: JSON.stringify(body),
+      });
+    }
+    if (!resp.ok) {
+      const errData = await resp.json().catch(() => ({}));
+      const msg = errData?.detail || `Server error: ${resp.status}`;
+      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg));
+    }
+    const data = await resp.json();
+    if (!Array.isArray(data.result)) throw new Error('Invalid format');
+    const fetchedText: string = data.terms_text || '';
+    const resultUrl: string = data.source_url || url;
+    const sortedResults = [...data.result].sort(
+      (a: RiskEntry, b: RiskEntry) => riskOrder[a.risktype] - riskOrder[b.risktype]
+    );
+    setAnalysisResult(sortedResults);
+    setTermsText(fetchedText);
+    logExtensionActivity(resultUrl, 'terms_analyzed', true).catch(() => {});
+    onAnalysisComplete?.(resultUrl, sortedResults, fetchedText);
+  };
+
+  const analyzeUrl = async (url: string) => {
+    if (isAnalyzingRef.current) return;
+    isAnalyzingRef.current = true;
+    setLoading(true);
+    setAnalysisError(null);
+    setAnalysisResult(null);
+    try {
+      await runAnalysisWithUrl(url);
+    } catch (err: unknown) {
+      const errMsg = err instanceof Error ? err.message : String(err);
+      if (errMsg.toLowerCase().includes('login')) {
+        setAnalysisError('Please log in to analyze terms.');
+      } else {
+        setAnalysisError(errMsg || 'Failed to analyze URL.');
+      }
+    } finally {
+      isAnalyzingRef.current = false;
+      setLoading(false);
+    }
+  };
 
   const runAnalysisWithText = async (text: string, url: string) => {
     let accessToken = await getAccessToken();

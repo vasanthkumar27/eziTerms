@@ -34,7 +34,7 @@ type ExtensionMainContentProps = {
   /** When true, use chrome.storage.session (cleared when browser closes). New session = empty tabs. */
   useSessionStorage?: boolean;
   /** When set (e.g. after "Yes, analyse" on T&C bubble), run analysis with this text/url once and then clear. */
-  initialScanRequest?: { text: string; url: string } | null;
+  initialScanRequest?: { text: string; url: string; mode?: 'text' | 'url' } | null;
   onConsumeInitialScanRequest?: () => void;
 };
 
