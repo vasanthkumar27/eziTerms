@@ -3,7 +3,7 @@ import LoginRedirectPage from './LoginRedirectPage';
 import { ExtensionMainContent } from './ExtensionMainContent';
 import AutoAnalyseToggle from '../shared/AutoAnalyseToggle';
 import { getAccessToken, clearTokens } from '../utils/tokenStore';
-import { fetchConfig, getWebsiteBaseUrl } from '../masterconstans/MasterConstants';
+import { fetchConfig } from '../masterconstans/MasterConstants';
 import {
   logoutBackend,
   hasUnsavedResults,
@@ -19,7 +19,6 @@ const WEBSITE_ORIGINS = [
   'https://haptix.in',
   'https://www.haptix.in',
   'https://distil.haptix.in',
-  'https://2a64ea27-33c2-473c-a9a2-fbd58963d474.preview.emergentagent.com',
   'http://localhost:5173',
   'http://localhost:3000',
 ];
@@ -43,6 +42,16 @@ function isTrustedWebsiteOrigin(origin: string | undefined | null): boolean {
   }
 }
 
+function isTrustedTabUrl(url: string | undefined): boolean {
+  if (!url) return false;
+  try {
+    const parsed = new URL(url);
+    return isTrustedWebsiteOrigin(parsed.origin);
+  } catch {
+    return false;
+  }
+}
+
 /**
  * Actively recover tokens from open haptix.in tabs when chrome.storage.local
  * has none. Handles the case where the user is logged in on the website but
@@ -51,13 +60,9 @@ function isTrustedWebsiteOrigin(origin: string | undefined | null): boolean {
 async function tryRecoverTokensFromWebsite(): Promise<boolean> {
   if (typeof chrome === 'undefined' || !chrome.tabs?.query || !chrome.scripting?.executeScript) return false;
   try {
-    const websiteBase = getWebsiteBaseUrl().replace(/\/$/, '');
-    const origins = [...WEBSITE_ORIGINS];
-    if (websiteBase && !origins.includes(websiteBase)) origins.push(websiteBase);
-
     const tabs = await chrome.tabs.query({});
     const matchingTabs = tabs.filter(
-      (t) => t.url && t.id != null && origins.some((o) => t.url!.startsWith(o))
+      (t) => t.url && t.id != null && isTrustedTabUrl(t.url),
     );
     for (const tab of matchingTabs) {
       if (tab.id == null) continue;
@@ -132,27 +137,36 @@ const ExtensionPopup: React.FC = () => {
 
   useEffect(() => {
     let mounted = true;
-    const checkAuth = async () => {
-      try {
-        await fetchConfig();
-        const token = await getAccessToken();
-        if (token) {
-          if (mounted) setIsAuthenticated(true);
-          return;
-        }
-        // No token in extension storage - try to recover from open website tabs
-        const recovered = await tryRecoverTokensFromWebsite();
-        if (recovered) {
-          const recoveredToken = await getAccessToken();
-          if (mounted) setIsAuthenticated(!!recoveredToken);
-        }
-      } finally {
-        if (mounted) setIsAuthChecking(false);
+    let retryTimer: ReturnType<typeof setTimeout> | null = null;
+    const MAX_ATTEMPTS = 5;
+    const checkAuth = async (attempt = 0) => {
+      if (attempt === 0) await fetchConfig();
+      const token = await getAccessToken();
+      if (token) {
+        if (mounted) { setIsAuthenticated(true); setIsAuthChecking(false); }
+        return;
       }
+      const recovered = await tryRecoverTokensFromWebsite();
+      if (recovered) {
+        const recoveredToken = await getAccessToken();
+        if (mounted) {
+          setIsAuthenticated(!!recoveredToken);
+          setIsAuthChecking(false);
+        }
+        return;
+      }
+      // Retry — the content script may still be syncing from localStorage
+      // after a fresh login on the website (race at panel-open time).
+      if (attempt + 1 < MAX_ATTEMPTS && mounted) {
+        retryTimer = setTimeout(() => checkAuth(attempt + 1), 700);
+        return;
+      }
+      if (mounted) setIsAuthChecking(false);
     };
     checkAuth();
     return () => {
       mounted = false;
+      if (retryTimer) clearTimeout(retryTimer);
     };
   }, []);
 

@@ -205,7 +205,32 @@ try {
             );
           }
         } catch { /* Extension context invalidated */ }
-      }, 2000);
+      }, 400);
+
+      // Cross-tab: `storage` event fires when *another* same-origin tab mutates
+      // localStorage. Covers multi-tab login scenarios.
+      window.addEventListener('storage', (ev: StorageEvent) => {
+        if (!ev) return;
+        if (ev.key !== ACCESS_KEY && ev.key !== REFRESH_KEY && ev.key !== SESSION_KEY && ev.key !== 'distil_auth_tick') return;
+        try {
+          syncLocalStorageToChrome(
+            localStorage.getItem(ACCESS_KEY),
+            localStorage.getItem(REFRESH_KEY),
+            localStorage.getItem(SESSION_KEY),
+          );
+        } catch { /* Extension context invalidated */ }
+      });
+
+      // Direct postMessage from the web app (crosses isolated/main world
+      // boundary cleanly, unlike CustomEvent.detail).
+      window.addEventListener('message', (ev: MessageEvent) => {
+        if (ev.source !== window) return;
+        if (ev.data?.type !== 'DISTIL_AUTH_UPDATE') return;
+        const access = (ev.data.access as string | null) ?? null;
+        const refresh = (ev.data.refresh as string | null) ?? null;
+        const hasValidTokens = (access && isJwtFormat(access)) || (refresh && isJwtFormat(refresh));
+        syncLocalStorageToChrome(access, refresh, localStorage.getItem(SESSION_KEY), !hasValidTokens);
+      });
     }
     ext.storage.onChanged.addListener((changes: Record<string, { newValue?: unknown }>, namespace: string) => {
       try {

@@ -15,17 +15,28 @@ function tokens() {
 function setTokens(access, refresh) {
   if (access) localStorage.setItem('access_token', access);
   if (refresh) localStorage.setItem('refresh_token', refresh);
+  // Bump a dedicated key so other tabs get a `storage` event even if same-value.
+  try { localStorage.setItem('distil_auth_tick', String(Date.now())); } catch {}
   window.dispatchEvent(new CustomEvent('distil-tokens-updated', {
     detail: { access, refresh },
   }));
+  // Redundant broadcast via postMessage: CustomEvent.detail does not cross
+  // Chrome extension isolated-world boundaries, but postMessage data does.
+  try {
+    window.postMessage({ type: 'DISTIL_AUTH_UPDATE', access, refresh }, window.location.origin);
+  } catch {}
 }
 
 export function clearTokens() {
   localStorage.removeItem('access_token');
   localStorage.removeItem('refresh_token');
   localStorage.removeItem('session_id');
+  try { localStorage.setItem('distil_auth_tick', String(Date.now())); } catch {}
   window.dispatchEvent(new CustomEvent('distil-tokens-updated', { detail: { access: null, refresh: null } }));
   window.dispatchEvent(new CustomEvent('distil-logout'));
+  try {
+    window.postMessage({ type: 'DISTIL_AUTH_UPDATE', access: null, refresh: null }, window.location.origin);
+  } catch {}
 }
 
 async function tryRefresh() {
