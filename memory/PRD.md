@@ -228,3 +228,51 @@ Replaced the plain-text masked preview with an animated placeholder-token render
 - `extension/src/extensionmaster/ExtensionMainContent.tsx` — empty-pane wrapper no-op.
 - `extension/src/extensionterms/TermsAnalyse.tsx` — animated `renderMaskedSegments` + keyframes injected into the modal portal.
 - Rebuilt `extension/dist/` + `dist.zip`.
+
+
+## Update — Auth Sync Hardening + Watchlist Seeding (2026-04-17)
+
+### User request
+> "Could you have login in sync… if the user is logged into the website then it will be automatically logged into the extension. Have some policies like Groq, ElevenLabs — something not so popular — on the watchlist, user specific."
+
+### 1. Login Sync hardening
+Previous fix relied on `CustomEvent` + 2 s `setInterval` polling. CustomEvent **detail** does not cross the isolated/main-world boundary in Chrome MV3, so the content script only ever caught token changes via the slow poll.
+
+Fixes:
+- **`frontend/src/api.js`** — `setTokens()` / `clearTokens()` now additionally:
+  - `window.postMessage({ type: 'DISTIL_AUTH_UPDATE', access, refresh }, location.origin)` — the `data` payload DOES survive the isolated-world hop.
+  - Bump `localStorage.distil_auth_tick = Date.now()` so other tabs fire a `storage` event for cross-tab login/logout.
+- **`extension/src/contentScripts/sidebarContent.tsx`** —
+  - Poll interval: **2 000 ms → 400 ms** (still cheap, far more responsive).
+  - New `window.addEventListener('storage', …)` — catches cross-tab mutations.
+  - New `window.addEventListener('message', …)` for `DISTIL_AUTH_UPDATE` — immediate sync on same-tab logins.
+- **`extension/src/extensionmaster/ExtensionPopup.tsx`** —
+  - Removed stale hard-coded preview URL (`2a64ea27-…`).
+  - New `isTrustedTabUrl()` uses the existing suffix list so `tryRecoverTokensFromWebsite()` works on any rotating `*.preview.emergentagent.com` pod.
+  - `checkAuth` now retries up to 5×/700 ms if no token in `chrome.storage.local` — handles the race where the panel opens before the content script has finished syncing.
+- **`extension/.env` / `frontend/.env`** — pointed both to the current preview URL.
+
+### 2. Watchlist Seeding
+New module `backend/services/watchlist_seeder.py` with a curated `SEED_POLICIES` tuple of 7 niche-but-real policies (Groq, ElevenLabs, Fal.ai, Replicate, Perplexity, Supabase, Vercel).
+
+- `POST /api/signup` → auto-seeds on account creation.
+- `GET /api/accepted-terms` → lazy-seeds once for existing users with zero entries.
+- A sentinel `__distil_seed_marker__` row tracks "already seeded" so deleting seeded entries doesn't resurrect them.
+- Response filter `filter_out_markers()` ensures the marker is never returned to the client.
+- `terms_watcher.check_all_due()` skips the marker row too.
+
+### 3. Verification
+Testing agent (iteration_1) — **100 % backend, 100 % frontend**:
+- 9/9 backend tests in `backend/tests/test_watchlist_seeding.py` pass.
+- Fresh signup → exactly 7 seed policies returned.
+- Idempotent: multiple GETs return the same 7 (not 14).
+- Delete-a-seeded-entry → GET returns 6 (no resurrection).
+- Existing user (`test@example.com`) with 1 real entry — unchanged, not re-seeded.
+- Marker row never leaves the API.
+- Frontend login flow emits `DISTIL_AUTH_UPDATE` postMessage + `distil_auth_tick` tick + sets `access_token` in localStorage.
+- Watchlist UI renders all 7 entries for a new account.
+
+### Files touched
+- **Backend**: `services/watchlist_seeder.py` (new), `main.py` (signup + list hooks), `services/terms_watcher.py` (skip marker).
+- **Frontend**: `src/api.js` (postMessage + tick).
+- **Extension**: `src/contentScripts/sidebarContent.tsx` (poll 400 ms + message + storage listeners), `src/extensionmaster/ExtensionPopup.tsx` (suffix-tab matching + retry), `.env` (URL). Rebuilt `extension/dist/` + `dist.zip`.
