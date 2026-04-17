@@ -161,7 +161,10 @@ function showToast(opts: {
     </div>`;
 
   document.body.appendChild(wrapper);
-  const close = () => dismissToast();
+  const markActed = () => {
+    try { (window as any).__distilConsentActed?.(); } catch { /* ignore */ }
+  };
+  const close = () => { markActed(); dismissToast(); };
   const saveBtn = wrapper.querySelector<HTMLButtonElement>('#distil-toast-save');
   const statusEl = wrapper.querySelector<HTMLDivElement>('#distil-toast-status');
   const actionsEl = wrapper.querySelector<HTMLDivElement>('#distil-toast-actions');
@@ -169,8 +172,8 @@ function showToast(opts: {
   wrapper.querySelector('#distil-toast-dismiss')?.addEventListener('click', close);
   wrapper.querySelector('#distil-toast-close')?.addEventListener('click', close);
   saveBtn?.addEventListener('click', () => {
-    // Fire save handler; do NOT close immediately. The handler (onSave)
-    // may call back via updateToastState() with success/error.
+    // Flip to "Saving…". The callback drives the final state.
+    markActed();
     if (saveBtn) {
       saveBtn.disabled = true;
       saveBtn.textContent = 'Saving…';
@@ -233,7 +236,16 @@ function sendSaveRequest(
 }
 
 function handleSaveWithFeedback(detail: { url: string; title: string; pageUrl: string }): void {
+  // Safety timeout — if the background worker never responds, show an error
+  // so the user isn't stuck staring at "Saving…".
+  let timedOut = false;
+  const timeoutId = window.setTimeout(() => {
+    timedOut = true;
+    updateToastState('error', 'Timed out — please try again');
+  }, 6000);
   sendSaveRequest(detail, (result) => {
+    if (timedOut) return;
+    window.clearTimeout(timeoutId);
     if (result.ok) {
       updateToastState('success');
     } else if (result.error === 'not_logged_in') {
@@ -376,20 +388,27 @@ function installOAuthConsentWatcher(): void {
   try {
     if (!OAUTH_CONSENT_URL_RE.test(window.location.pathname + window.location.search)) return;
 
-    const tryOnce = () => { try { maybeShowConsentToast(); } catch { /* ignore */ } };
+    // Sentinel: once the user has explicitly acted on the toast (save, dismiss,
+    // or close) we never show it again on this document. Prevents the
+    // MutationObserver below from resurrecting a toast the user just closed.
+    let userActed = false;
+    (window as any).__distilConsentActed = () => { userActed = true; };
 
-    // Retry a few times — consent screens often render content after an RPC.
+    const tryOnce = () => {
+      if (userActed) return;
+      try { maybeShowConsentToast(); } catch { /* ignore */ }
+    };
+
     setTimeout(tryOnce, 400);
     setTimeout(tryOnce, 1200);
     setTimeout(tryOnce, 2400);
 
-    // Also observe in case the DOM changes (e.g. after the profile picker).
     const obs = new MutationObserver(() => {
+      if (userActed) { obs.disconnect(); return; }
       if (document.getElementById(TOAST_ID)) return;
       tryOnce();
     });
     obs.observe(document.documentElement, { childList: true, subtree: true });
-    // Safety: stop observing after 30 s.
     setTimeout(() => obs.disconnect(), 30_000);
   } catch {
     // never break OAuth flow
